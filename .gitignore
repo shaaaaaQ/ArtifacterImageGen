@@ -1,0 +1,6 @@
+/venv
+/cache/*
+
+!.gitkeep
+
+/test1.json
