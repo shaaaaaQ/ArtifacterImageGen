@@ -36,7 +36,7 @@ def generate(character):
     base = Image.open(f'{cwd}/assets/base/{element}.png')
 
     # character
-    # TODO costume アルハイゼン？
+    # TODO costume アルハイゼン
     character_image = fetch_image(
         character.image.banner.filename).convert('RGBA')
     character_image = character_image.crop((289, 0, 1728, 1024))
@@ -79,6 +79,26 @@ def generate(character):
     weapon_r_mask = weapon_r_image.copy()
     weapon_r_paste.paste(weapon_r_image, (1422, 173), mask=weapon_r_mask)
     base = Image.alpha_composite(base, weapon_r_paste)
+
+    # skill
+    skill_base = Image.open(f'{cwd}/assets/skill_back.png')
+    skill_base_paste = Image.new("RGBA", base.size, (255, 255, 255, 0))
+    skill_base = skill_base.resize(
+        (int(skill_base.width/1.5), int(skill_base.height/1.5)))
+
+    for i in range(3):
+        skill = character.skills[i]
+        skill_paste = Image.new("RGBA", skill_base.size, (255, 255, 255, 0))
+        skill_image = fetch_image(skill.icon.filename).resize(
+            (50, 50)).convert('RGBA')
+        skill_mask = skill_image.copy()
+        skill_paste.paste(skill_image, (skill_paste.width//2-25,
+                          skill_paste.height//2-25), mask=skill_mask)
+
+        skill_object = Image.alpha_composite(skill_base, skill_paste)
+        skill_base_paste.paste(skill_object, (15, 330+i*105))
+
+    base = Image.alpha_composite(base, skill_base_paste)
 
     return base
 
