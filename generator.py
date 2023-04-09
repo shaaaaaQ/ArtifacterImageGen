@@ -1,6 +1,7 @@
 import json
 import os
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
+from enkanetwork import EquipmentsType
 import requests
 
 cwd = os.path.abspath(os.path.dirname(__file__))
@@ -25,7 +26,7 @@ def fetch_image(name):
         image = res.content
         with open(filepath, mode='wb') as f:
             f.write(image)
-    return Image.open(filepath).convert('RGBA')
+    return Image.open(filepath)
 
 
 def generate(character):
@@ -36,7 +37,8 @@ def generate(character):
 
     # character
     # TODO costume アルハイゼン？
-    character_image = fetch_image(character.image.banner.filename)
+    character_image = fetch_image(
+        character.image.banner.filename).convert('RGBA')
     character_image = character_image.crop((289, 0, 1728, 1024))
     character_image = character_image.resize(
         (int(character_image.width*0.75), int(character_image.height*0.75)))
@@ -55,6 +57,29 @@ def generate(character):
     base = Image.alpha_composite(base, character_paste)
     base = Image.alpha_composite(base, character_shadow)
 
+    # weapon
+    weapon = [
+        equip
+        for equip in character.equipments
+        if equip.type == EquipmentsType.WEAPON
+    ][0]
+    weapon_rarity = weapon.detail.rarity
+    weapon_image = fetch_image(weapon.detail.icon.filename).convert(
+        'RGBA').resize((128, 128))
+    weapon_paste = Image.new("RGBA", base.size, (255, 255, 255, 0))
+    weapon_mask = weapon_image.copy()
+    weapon_paste.paste(weapon_image, (1430, 50), mask=weapon_mask)
+    base = Image.alpha_composite(base, weapon_paste)
+
+    weapon_r_image = Image.open(
+        f'{cwd}/assets/rarity/{weapon_rarity}.png').convert("RGBA")
+    weapon_r_image = weapon_r_image.resize(
+        (int(weapon_r_image.width*0.97), int(weapon_r_image.height*0.97)))
+    weapon_r_paste = Image.new("RGBA", base.size, (255, 255, 255, 0))
+    weapon_r_mask = weapon_r_image.copy()
+    weapon_r_paste.paste(weapon_r_image, (1422, 173), mask=weapon_r_mask)
+    base = Image.alpha_composite(base, weapon_r_paste)
+
     return base
 
 
@@ -69,5 +94,4 @@ async def test():
 if __name__ == '__main__':
     from enkanetwork import EnkaNetworkAPI
     import asyncio
-    uid = 618285856
     asyncio.run(test())
