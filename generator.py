@@ -126,18 +126,46 @@ def generate(character):
 
     base = Image.alpha_composite(base, c_base_paste)
 
+    # 文字？
+    draw = ImageDraw.Draw(base)
+
+    draw.text((30, 20), character.name, font=font(48))
+    level_length = draw.textlength("Lv."+str(character.level), font=font(25))
+    friendship_length = draw.textlength(
+        str(character.friendship_level), font=font(25))
+    draw.text((35, 75), "Lv."+str(character.level), font=font(25))
+    draw.rounded_rectangle((35+level_length+5, 74, 77+level_length +
+                            friendship_length, 102), radius=2, fill="black")
+    friendship_icon = Image.open(
+        f'{cwd}/assets/friendship.png').convert("RGBA")
+    friendship_icon = friendship_icon.resize(
+        (int(friendship_icon.width*(24/friendship_icon.height)), 24))
+    friendship_icon_mask = friendship_icon.copy()
+    base.paste(friendship_icon, (42+int(level_length), 76),
+               mask=friendship_icon_mask)
+    draw.text((73+level_length, 74),
+              str(character.friendship_level), font=font(25))
+
+    for i in range(3):
+        draw.text(
+            (42, 397+i*105),
+            f'Lv.{character.skills[i].level}',
+            font=font(17),
+            fill='aqua' if character.skills[i].level >= 10 else None
+        )
+
     return base
-
-
-async def test():
-    client = EnkaNetworkAPI()
-    async with client:
-        data = await client.fetch_user(618285856)
-        img = generate(data.characters[0])
-        img.show()
 
 
 if __name__ == '__main__':
     from enkanetwork import EnkaNetworkAPI
     import asyncio
+
+    async def test():
+        client = EnkaNetworkAPI(lang='jp')
+        async with client:
+            data = await client.fetch_user(618285856)
+            img = generate(data.characters[1])
+            img.show()
+
     asyncio.run(test())
