@@ -36,7 +36,7 @@ def generate(character):
     base = Image.open(f'{cwd}/assets/base/{element}.png')
 
     # character
-    # TODO costume アルハイゼン
+    # TODO costume アルハイゼン 旅人
     character_image = fetch_image(
         character.image.banner.filename).convert('RGBA')
     character_image = character_image.crop((289, 0, 1728, 1024))
@@ -99,6 +99,32 @@ def generate(character):
         skill_base_paste.paste(skill_object, (15, 330+i*105))
 
     base = Image.alpha_composite(base, skill_base_paste)
+
+    # constellation
+    c_base = Image.open(
+        f'{cwd}/assets/constellation/{element}.png'
+    ).resize((90, 90)).convert('RGBA')
+    c_lock = Image.open(
+        f'{cwd}/assets/constellation/{element}_lock.png'
+    ).resize((90, 90)).convert('RGBA')
+    c_lock_mask = c_lock.copy()
+
+    c_base_paste = Image.new("RGBA", base.size, (255, 255, 255, 0))
+    for i, c in enumerate(character.constellations, 1):
+        if not c.unlocked:
+            c_base_paste.paste(c_lock, (666, -10+i*93), mask=c_lock_mask)
+        else:
+            c_image = fetch_image(c.icon.filename).convert(
+                "RGBA").resize((45, 45))
+            c_paste = Image.new("RGBA", c_base.size, (255, 255, 255, 0))
+            c_mask = c_image.copy()
+            c_paste.paste(c_image, (int(c_paste.width/2)-25,
+                                    int(c_paste.height/2)-23), mask=c_mask)
+
+            c_object = Image.alpha_composite(c_base, c_paste)
+            c_base_paste.paste(c_object, (666, -10+i*93))
+
+    base = Image.alpha_composite(base, c_base_paste)
 
     return base
 
