@@ -1,5 +1,7 @@
 import json
 import os
+import itertools
+from collections import Counter
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 from enkanetwork import EquipmentsType
 import requests
@@ -19,6 +21,39 @@ state_op = (
     '元素チャージ効率'
 )
 
+point_refer = {
+    "Total": {
+        "SS": 220,
+        "S": 200,
+        "A": 180
+    },
+    "EQUIP_BRACER": {
+        "SS": 50,
+        "S": 45,
+        "A": 40
+    },
+    "EQUIP_NECKLACE": {
+        "SS": 50,
+        "S": 45,
+        "A": 40
+    },
+    "EQUIP_SHOES": {
+        "SS": 45,
+        "S": 40,
+        "A": 35
+    },
+    "EQUIP_RING": {
+        "SS": 45,
+        "S": 40,
+        "A": 37
+    },
+    "EQUIP_DRESS": {
+        "SS": 40,
+        "S": 35,
+        "A": 30
+    }
+}
+
 element_ja = {
     'Anemo': '風',
     'Cryo': '氷',
@@ -27,6 +62,29 @@ element_ja = {
     'Geo': '岩',
     'Hydro': '水',
     'Pyro': '炎'
+}
+
+prop_id_ja = {
+    'FIGHT_PROP_BASE_ATTACK': '基礎攻撃力',
+    'FIGHT_PROP_HP': 'HP',
+    'FIGHT_PROP_ATTACK': '攻撃力',
+    'FIGHT_PROP_DEFENSE': '防御力',
+    'FIGHT_PROP_HP_PERCENT': 'HPパーセンテージ',
+    'FIGHT_PROP_ATTACK_PERCENT': '攻撃パーセンテージ',
+    'FIGHT_PROP_DEFENSE_PERCENT': '防御パーセンテージ',
+    'FIGHT_PROP_CRITICAL': '会心率',
+    'FIGHT_PROP_CRITICAL_HURT': '会心ダメージ',
+    'FIGHT_PROP_CHARGE_EFFICIENCY': '元素チャージ効率',
+    'FIGHT_PROP_HEAL_ADD': '与える治癒効果',
+    'FIGHT_PROP_ELEMENT_MASTERY': '元素熟知',
+    'FIGHT_PROP_PHYSICAL_ADD_HURT': '物理ダメージ',
+    'FIGHT_PROP_FIRE_ADD_HURT': '炎元素ダメージ',
+    'FIGHT_PROP_ELEC_ADD_HURT': '雷元素ダメージ',
+    'FIGHT_PROP_WATER_ADD_HURT': '水元素ダメージ',
+    'FIGHT_PROP_WIND_ADD_HURT': '風元素ダメージ',
+    'FIGHT_PROP_ICE_ADD_HURT': '氷元素ダメージ',
+    'FIGHT_PROP_ROCK_ADD_HURT': '岩元素ダメージ',
+    'FIGHT_PROP_GRASS_ADD_HURT': '草元素ダメージ',
 }
 
 cwd = os.path.abspath(os.path.dirname(__file__))
@@ -53,16 +111,167 @@ def fetch_image(name):
     return Image.open(filepath)
 
 
+def calculate_op(data: dict):
+    dup = read_json(f'{cwd}/assets/duplicate.json')
+    mapping = read_json(f'{cwd}/assets/subopM.json')
+
+    res = [None, None, None, None]
+    keymap = list(map(str, data.keys()))
+
+    is_dup = []
+    # 重複するものがあるか判定
+    for ctg, state in data.items():
+        dup_value = dup[ctg]['ov']
+        if str(state) in dup_value:
+            is_dup.append((ctg, state))
+
+    # フラグの設定
+    counter_flag = 0
+    dup_ctg = [i[0] for i in is_dup]
+    maxium_state_ct = 9
+
+    # 重複が 0 の時の処理
+    if not len(is_dup):
+        for ctg, state in data.items():
+            idx = keymap.index(ctg)
+            res[idx] = mapping[ctg][str(state)]
+        return res
+
+    # 重複するものが一つの場合
+
+    if len(is_dup) == 1:
+        # 重複のないもの
+        single_state = {c: s for c, s in data.items() if c not in dup_ctg}
+        for ctg, state in single_state.items():
+            idx = keymap.index(ctg)
+            res[idx] = mapping[ctg][str(state)]
+            counter_flag += len(mapping[ctg][str(state)])
+
+        # 重複するもの
+        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
+        long = maxium_state_ct - counter_flag
+        possiblity = []
+
+        for ctg, state in dup_state.items():
+            possiblity = dup[ctg][str(state)]
+            for p in possiblity:
+                if len(p) == long or len(p) == long-1:
+                    idx = keymap.index(ctg)
+                    res[idx] = p
+                    return res
+
+    # 重複するものが複数の場合
+    if len(is_dup) == 2:
+        single_state = {c: s for c, s in data.items() if c not in dup_ctg}
+        for ctg, state in single_state.items():
+            idx = keymap.index(ctg)
+            res[idx] = mapping[ctg][str(state)]
+            counter_flag += len(mapping[ctg][str(state)])
+
+        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
+        long = maxium_state_ct - counter_flag
+
+        sample = [[ctg, state]for ctg, state in dup_state.items()]
+
+        possiblity1 = dup[sample[0][0]][str(sample[0][1])]
+        possiblity2 = dup[sample[1][0]][str(sample[1][1])]
+
+        p1 = [len(p) for p in possiblity1]
+        p2 = [len(p) for p in possiblity2]
+
+        p = itertools.product(p1, p2)
+        for v in p:
+            if sum(v) == long or sum(v) == long-1:
+                break
+
+        idx1 = keymap.index(sample[0][0])
+        idx2 = keymap.index(sample[1][0])
+
+        res[idx1] = possiblity1[p1.index(v[0])]
+        res[idx2] = possiblity2[p2.index(v[1])]
+        return res
+
+    if len(is_dup) == 3:
+        single_state = {c: s for c, s in data.items() if c not in dup_ctg}
+        for ctg, state in single_state.items():
+            idx = keymap.index(ctg)
+            res[idx] = mapping[ctg][str(state)]
+            counter_flag += len(mapping[ctg][str(state)])
+
+        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
+        long = maxium_state_ct - counter_flag
+
+        sample = [[ctg, state]for ctg, state in dup_state.items()]
+
+        possiblity1 = dup[sample[0][0]][str(sample[0][1])]
+        possiblity2 = dup[sample[1][0]][str(sample[1][1])]
+        possiblity3 = dup[sample[2][0]][str(sample[2][1])]
+
+        p1 = [len(p) for p in possiblity1]
+        p2 = [len(p) for p in possiblity2]
+        p3 = [len(p) for p in possiblity3]
+
+        p = itertools.product(p1, p2, p3)
+        for v in p:
+            if sum(v) == long or sum(v) == long-1:
+                break
+
+        idx1 = keymap.index(sample[0][0])
+        idx2 = keymap.index(sample[1][0])
+        idx3 = keymap.index(sample[2][0])
+
+        res[idx1] = possiblity1[p1.index(v[0])]
+        res[idx2] = possiblity2[p2.index(v[1])]
+        res[idx3] = possiblity3[p3.index(v[2])]
+
+        return res
+
+    if len(is_dup) == 4:
+        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
+        long = maxium_state_ct - counter_flag
+
+        sample = [[ctg, state]for ctg, state in dup_state.items()]
+
+        possiblity1 = dup[sample[0][0]][str(sample[0][1])]
+        possiblity2 = dup[sample[1][0]][str(sample[1][1])]
+        possiblity3 = dup[sample[2][0]][str(sample[2][1])]
+        possiblity4 = dup[sample[3][0]][str(sample[3][1])]
+
+        p1 = [len(p) for p in possiblity1]
+        p2 = [len(p) for p in possiblity2]
+        p3 = [len(p) for p in possiblity3]
+        p4 = [len(p) for p in possiblity4]
+
+        p = itertools.product(p1, p2, p3, p4)
+        for v in p:
+            if sum(v) == long or sum(v) == long-1:
+                break
+
+        idx1 = keymap.index(sample[0][0])
+        idx2 = keymap.index(sample[1][0])
+        idx3 = keymap.index(sample[2][0])
+        idx4 = keymap.index(sample[3][0])
+
+        res[idx1] = possiblity1[p1.index(v[0])]
+        res[idx2] = possiblity2[p2.index(v[1])]
+        res[idx3] = possiblity3[p3.index(v[2])]
+        res[idx4] = possiblity4[p4.index(v[3])]
+
+        return res
+    return
+
+
 def generate(character):
     element = character.element.name
     character_stats = {
-        'HP': character.stats.FIGHT_PROP_HP.to_rounded(),
-        "攻撃力": character.stats.FIGHT_PROP_ATTACK.to_rounded(),
-        "防御力": character.stats.FIGHT_PROP_DEFENSE.to_rounded(),
+        'HP': character.stats.FIGHT_PROP_MAX_HP.to_rounded(),
+        "攻撃力": character.stats.FIGHT_PROP_CUR_ATTACK.to_rounded(),
+        "防御力": character.stats.FIGHT_PROP_CUR_DEFENSE.to_rounded(),
         "元素熟知": character.stats.FIGHT_PROP_ELEMENT_MASTERY.to_rounded(),
         "会心率": character.stats.FIGHT_PROP_CRITICAL.to_percentage(),
         "会心ダメージ": character.stats.FIGHT_PROP_CRITICAL_HURT.to_percentage(),
-        "元素チャージ効率": character.stats.FIGHT_PROP_CHARGE_EFFICIENCY.to_percentage()
+        "元素チャージ効率":
+            character.stats.FIGHT_PROP_CHARGE_EFFICIENCY.to_percentage()
     }
     character_base_stats = {
         "HP": character.stats.BASE_HP.to_rounded(),
@@ -85,10 +294,29 @@ def generate(character):
         add_stat = f'{element_ja[element]}元素ダメージ'
     character_stats[add_stat] = character_add_stats[add_stat]
 
+    artifacts = {
+        'EQUIP_BRACER': None,
+        "EQUIP_NECKLACE": None,
+        "EQUIP_SHOES": None,
+        "EQUIP_RING": None,
+        "EQUIP_DRESS": None
+    }
+
+    for equip in character.equipments:
+        if equip.type == EquipmentsType.WEAPON:
+            weapon = equip
+        elif equip.type == EquipmentsType.ARTIFACT:
+            artifacts[equip.detail.artifact_type.value] = equip
+
     # スコア
     score = {
-        'state': 'HP',
-        'total': 200
+        'State': 'HP',
+        'Total': 0,
+        "EQUIP_BRACER": 0,
+        "EQUIP_NECKLACE": 0,
+        "EQUIP_SHOES": 0,
+        "EQUIP_RING": 0,
+        "EQUIP_DRESS": 0
     }
 
     # base
@@ -117,11 +345,6 @@ def generate(character):
     base = Image.alpha_composite(base, character_shadow)
 
     # weapon
-    weapon = [
-        equip
-        for equip in character.equipments
-        if equip.type == EquipmentsType.WEAPON
-    ][0]
     weapon_rarity = weapon.detail.rarity
     weapon_image = fetch_image(weapon.detail.icon.filename).convert(
         'RGBA').resize((128, 128))
@@ -277,34 +500,35 @@ def generate(character):
     }
     if weapon.detail.substats:
         weapon_substat = weapon.detail.substats[0]
+        weapon_substat_name = prop_id_ja[weapon_substat.prop_id]
         weapon_substat_image = Image.open(
-            f'{cwd}/assets/emotes/{weapon_substat.name}.png').resize((23, 23))
+            f'{cwd}/assets/emotes/{weapon_substat_name}.png').resize((23, 23))
         weapon_substat_mask = weapon_substat_image.copy()
         base.paste(weapon_substat_image, (1600, 155), mask=weapon_substat_mask)
 
         draw.text(
             (1623, 155),
             f'''{
-                option_map.get(weapon_substat.name) or weapon_substat.name
+                option_map.get(weapon_substat_name) or weapon_substat_name
             }  {
                 str(weapon_substat.value)+"%"
-                if weapon_substat.name in disper
+                if weapon_substat_name in disper
                 else format(weapon_substat.value,",")
             }''', font=font(23))
 
     draw.rounded_rectangle((1430, 45, 1470, 70), radius=1, fill='black')
     draw.text((1433, 46), f'R{weapon.refinement}', font=font(24))
 
-    score_len = draw.textlength(f'{score["total"]}', font(75))
-    draw.text((1652-score_len//2, 420), str(score["total"]), font=font(75))
-    b_len = draw.textlength(f'{score["state"]}換算', font=font(24))
-    draw.text((1867-b_len, 585), f'{score["state"]}換算', font=font(24))
+    score_len = draw.textlength(f'{score["Total"]}', font(75))
+    draw.text((1652-score_len//2, 420), str(score["Total"]), font=font(75))
+    b_len = draw.textlength(f'{score["State"]}換算', font=font(24))
+    draw.text((1867-b_len, 585), f'{score["State"]}換算', font=font(24))
 
-    if score["total"] >= 220:
+    if score["Total"] >= 220:
         score_ev = Image.open(f'{cwd}/assets/grade/SS.png')
-    elif score["total"] >= 200:
+    elif score["Total"] >= 200:
         score_ev = Image.open(f'{cwd}/assets/grade/S.png')
-    elif score["total"] >= 180:
+    elif score["Total"] >= 180:
         score_ev = Image.open(f'{cwd}/assets/grade/A.png')
     else:
         score_ev = Image.open(f'{cwd}/assets/grade/B.png')
@@ -313,6 +537,173 @@ def generate(character):
     score_ev_mask = score_ev.copy()
 
     base.paste(score_ev, (1806, 345), mask=score_ev_mask)
+
+    # 聖遺物
+    artifact_type = []
+    for i, parts in enumerate(artifacts.keys()):
+        artifact = artifacts.get(parts)
+
+        if not artifact:
+            continue
+        artifact_type.append(artifact.detail.name)
+        artifact_paste = Image.new('RGBA', base.size, (255, 255, 255, 0))
+        artifact_image = fetch_image(
+            artifact.detail.icon.filename).resize((256, 256))
+        artifact_enhancer = ImageEnhance.Brightness(artifact_image)
+        artifact_image = artifact_enhancer.enhance(0.6)
+        artifact_image = artifact_image.resize(
+            (int(artifact_image.width*1.3), int(artifact_image.height*1.3)))
+        artifact_mask2 = artifact_image.copy()
+
+        artifact_mask = Image.open(
+            f'{cwd}/assets/artifact_mask.png'
+        ).convert('L').resize(artifact_image.size)
+        artifact_image.putalpha(artifact_mask)
+        if parts in ['flower', 'crown']:
+            artifact_paste.paste(
+                artifact_image, (-37+373*i, 570), mask=artifact_mask2)
+        elif parts in ['wing', 'cup']:
+            artifact_paste.paste(
+                artifact_image, (-36+373*i, 570), mask=artifact_mask2)
+        else:
+            artifact_paste.paste(
+                artifact_image, (-35+373*i, 570), mask=artifact_mask2)
+        base = Image.alpha_composite(base, artifact_paste)
+        draw = ImageDraw.Draw(base)
+
+        mainstat = artifact.detail.mainstats
+
+        mainstat_len = draw.textlength(
+            option_map.get(
+                prop_id_ja[mainstat.prop_id]) or prop_id_ja[mainstat.prop_id],
+            font=font(29)
+        )
+        draw.text(
+            (375+i*373-int(mainstat_len), 655),
+            option_map.get(prop_id_ja[mainstat.prop_id]
+                           ) or prop_id_ja[mainstat.prop_id],
+            font=font(29)
+        )
+        mainstat_icon = Image.open(
+            f'{cwd}/assets/emotes/{prop_id_ja[mainstat.prop_id]}.png'
+        ).convert("RGBA").resize((35, 35))
+        mainstat_mask = mainstat_icon.copy()
+        base.paste(mainstat_icon, (340+i*373 -
+                   int(mainstat_len), 655), mask=mainstat_mask)
+
+        if mainstat in disper:
+            mainstat_value_size = draw.textlength(
+                f'{float(mainstat.value)}%', font(49))
+            draw.text((375+i*373-mainstat_value_size, 690),
+                      f'{float(mainstat.value)}%', font=font(49))
+        else:
+            mainstat_value_size = draw.textlength(
+                format(mainstat.value, ","), font(49))
+            draw.text((375+i*373-mainstat_value_size, 690),
+                      format(mainstat.value, ","), font=font(49))
+
+        level_len = draw.textlength(f'+{artifact.level}', font(21))
+        draw.rounded_rectangle((373+i*373-int(level_len), 748,
+                                375+i*373, 771), fill='black', radius=2)
+        draw.text((374+i*373-level_len, 749),
+                  f'+{artifact.level}', font=font(21))
+
+        substats = artifact.detail.substats
+        if artifact.level == 20 and artifact.detail.rarity == 5:
+            c_data = {}
+            for stat in substats:
+                stat_name = prop_id_ja[stat.prop_id]
+                if stat_name in disper:
+                    c_data[stat_name] = str(float(stat.value))
+                else:
+                    c_data[stat_name] = str(stat.value)
+            psb = calculate_op(c_data)
+
+        if len(substats) == 0:
+            continue
+
+        for a, stat in enumerate(substats):
+            stat_name = prop_id_ja[stat.prop_id]
+            if stat_name in ['HP', '攻撃力', '防御力']:
+                draw.text(
+                    (79+373*i, 811+50*a),
+                    option_map.get(stat_name) or stat_name,
+                    font=font(25), fill=(255, 255, 255, 190)
+                )
+            else:
+                draw.text((79+373*i, 811+50*a), option_map.get(stat_name)
+                          or stat_name, font=font(25))
+            substat_icon = Image.open(
+                f'{cwd}/assets/emotes/{stat_name}.png').resize((30, 30))
+            substat_mask = substat_icon.copy()
+            base.paste(substat_icon, (44+373*i, 811+50*a), mask=substat_mask)
+            if stat_name in disper:
+                substat_size = draw.textlength(
+                    f'{float(stat.value)}%', font(25))
+                draw.text((375+i*373-substat_size, 811+50*a),
+                          f'{float(stat.value)}%', font=font(25))
+            else:
+                substat_size = draw.textlength(
+                    format(stat.value, ","), font(25))
+                if stat_name in ['防御力', '攻撃力', 'HP']:
+                    draw.text(
+                        (375+i*373-substat_size, 811+50*a),
+                        format(stat.value, ","),
+                        font=font(25),
+                        fill=(255, 255, 255, 190)
+                    )
+                else:
+                    draw.text(
+                        (375+i*373-substat_size, 811+50*a),
+                        format(stat.value, ","),
+                        font=font(25),
+                        fill=(255, 255, 255)
+                    )
+
+            if artifact.level == 20 and artifact.detail.rarity == 5:
+                nobi = draw.textlength(
+                    "+".join(map(str, psb[a])), font=font(11))
+                draw.text(
+                    (375+i*373-nobi, 840+50*a),
+                    "+".join(map(str, psb[a])),
+                    fill=(255, 255, 255, 160),
+                    font=font(11)
+                )
+
+        artifact_score = float(score[parts])
+        score_len = draw.textlength(str(artifact_score), font(36))
+        draw.text((380+i*373-score_len, 1016),
+                  str(artifact_score), font=font(36))
+        draw.text((295+i*373-score_len, 1025), 'Score',
+                  font=font(27), fill=(160, 160, 160))
+
+        if artifact_score >= point_refer[parts]['SS']:
+            grade_image = Image.open(f'{cwd}/assets/grade/SS.png')
+        elif artifact_score >= point_refer[parts]['S']:
+            grade_image = Image.open(f'{cwd}/assets/grade/S.png')
+        elif artifact_score >= point_refer[parts]['A']:
+            grade_image = Image.open(f'{cwd}/assets/grade/A.png')
+        else:
+            grade_image = Image.open(f'{cwd}/assets/grade/B.png')
+
+        grade_image = grade_image.resize(
+            (grade_image.width//11, grade_image.height//11))
+        grade_mask = grade_image.copy()
+
+        base.paste(grade_image, (85+373*i, 1013), mask=grade_mask)
+
+    set_bonus = Counter(
+        [x for x in artifact_type if artifact_type.count(x) >= 2])
+    for i, (n, q) in enumerate(set_bonus.items()):
+        if len(set_bonus) == 2:
+            draw.text((1536, 243+i*35), n, fill=(0, 255, 0), font=font(23))
+            draw.rounded_rectangle(
+                (1818, 243+i*35, 1862, 266+i*35), 1, 'black')
+            draw.text((1835, 243+i*35), str(q), font=font(19))
+        if len(set_bonus) == 1:
+            draw.text((1536, 263), n, fill=(0, 255, 0), font=font(23))
+            draw.rounded_rectangle((1818, 263, 1862, 288), 1, 'black')
+            draw.text((1831, 265), str(q), font=font(19))
 
     return base
 
@@ -325,7 +716,7 @@ if __name__ == '__main__':
         client = EnkaNetworkAPI(lang='jp')
         async with client:
             data = await client.fetch_user(618285856)
-            img = generate(data.characters[0])
+            img = generate(data.characters[1])
             img.show()
 
     asyncio.run(test())
