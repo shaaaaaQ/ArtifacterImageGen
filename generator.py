@@ -323,7 +323,6 @@ def generate(character):
     base = Image.open(f'{cwd}/assets/base/{element}.png')
 
     # character
-    # TODO costume アルハイゼン 旅人
     character_image = fetch_image(
         character.image.banner.filename).convert('RGBA')
     character_image = character_image.crop((289, 0, 1728, 1024))
@@ -545,7 +544,7 @@ def generate(character):
 
         if not artifact:
             continue
-        artifact_type.append(artifact.detail.name)
+        artifact_type.append(artifact.detail.artifact_name_set)
         artifact_paste = Image.new('RGBA', base.size, (255, 255, 255, 0))
         artifact_image = fetch_image(
             artifact.detail.icon.filename).resize((256, 256))
@@ -559,10 +558,10 @@ def generate(character):
             f'{cwd}/assets/artifact_mask.png'
         ).convert('L').resize(artifact_image.size)
         artifact_image.putalpha(artifact_mask)
-        if parts in ['flower', 'crown']:
+        if parts in ['EQUIP_BRACER', 'EQUIP_DRESS']:
             artifact_paste.paste(
                 artifact_image, (-37+373*i, 570), mask=artifact_mask2)
-        elif parts in ['wing', 'cup']:
+        elif parts in ['EQUIP_NECKLACE', 'EQUIP_RING']:
             artifact_paste.paste(
                 artifact_image, (-36+373*i, 570), mask=artifact_mask2)
         else:
@@ -692,8 +691,11 @@ def generate(character):
 
         base.paste(grade_image, (85+373*i, 1013), mask=grade_mask)
 
-    set_bonus = Counter(
-        [x for x in artifact_type if artifact_type.count(x) >= 2])
+    set_bonus = Counter([
+        x
+        for x in artifact_type
+        if artifact_type.count(x) >= 2
+    ])
     for i, (n, q) in enumerate(set_bonus.items()):
         if len(set_bonus) == 2:
             draw.text((1536, 243+i*35), n, fill=(0, 255, 0), font=font(23))
@@ -715,8 +717,8 @@ if __name__ == '__main__':
     async def test():
         client = EnkaNetworkAPI(lang='jp')
         async with client:
-            data = await client.fetch_user(618285856)
-            img = generate(data.characters[1])
+            data = await client.fetch_user(811455610)
+            img = generate(data.characters[5])
             img.show()
 
     asyncio.run(test())
