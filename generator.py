@@ -85,6 +85,12 @@ def generate(character):
         add_stat = f'{element_ja[element]}元素ダメージ'
     character_stats[add_stat] = character_add_stats[add_stat]
 
+    # スコア
+    score = {
+        'state': 'HP',
+        'total': 200
+    }
+
     # base
     base = Image.open(f'{cwd}/assets/base/{element}.png')
 
@@ -250,7 +256,63 @@ def generate(character):
             draw.text((1360-hp_size-hp_b_size-1, 97+i*70), hp_base,
                       font=font(12), fill=(255, 255, 255, 180))
 
-    # 365
+    draw.text((1582, 47), weapon.detail.name, font=font(26))
+    weapon_level_len = draw.textlength(f'Lv.{weapon.level}', font=font(24))
+    draw.rounded_rectangle((1582, 80, 1582+weapon_level_len+4, 108),
+                           radius=1, fill='black')
+    draw.text((1584, 82), f'Lv.{weapon.level}', font=font(24))
+
+    base_atk_image = Image.open(
+        f'{cwd}/assets/emotes/基礎攻撃力.png').resize((23, 23))
+    base_atk_mask = base_atk_image.copy()
+    base.paste(base_atk_image, (1600, 120), mask=base_atk_mask)
+    draw.text(
+        (1623, 120), f'基礎攻撃力  {weapon.detail.mainstats.value}', font=font(23))
+
+    option_map = {
+        "攻撃パーセンテージ": "攻撃%",
+        "防御パーセンテージ": "防御%",
+        "元素チャージ効率": "元チャ効率",
+        "HPパーセンテージ": "HP%",
+    }
+    if weapon.detail.substats:
+        weapon_substat = weapon.detail.substats[0]
+        weapon_substat_image = Image.open(
+            f'{cwd}/assets/emotes/{weapon_substat.name}.png').resize((23, 23))
+        weapon_substat_mask = weapon_substat_image.copy()
+        base.paste(weapon_substat_image, (1600, 155), mask=weapon_substat_mask)
+
+        draw.text(
+            (1623, 155),
+            f'''{
+                option_map.get(weapon_substat.name) or weapon_substat.name
+            }  {
+                str(weapon_substat.value)+"%"
+                if weapon_substat.name in disper
+                else format(weapon_substat.value,",")
+            }''', font=font(23))
+
+    draw.rounded_rectangle((1430, 45, 1470, 70), radius=1, fill='black')
+    draw.text((1433, 46), f'R{weapon.refinement}', font=font(24))
+
+    score_len = draw.textlength(f'{score["total"]}', font(75))
+    draw.text((1652-score_len//2, 420), str(score["total"]), font=font(75))
+    b_len = draw.textlength(f'{score["state"]}換算', font=font(24))
+    draw.text((1867-b_len, 585), f'{score["state"]}換算', font=font(24))
+
+    if score["total"] >= 220:
+        score_ev = Image.open(f'{cwd}/assets/grade/SS.png')
+    elif score["total"] >= 200:
+        score_ev = Image.open(f'{cwd}/assets/grade/S.png')
+    elif score["total"] >= 180:
+        score_ev = Image.open(f'{cwd}/assets/grade/A.png')
+    else:
+        score_ev = Image.open(f'{cwd}/assets/grade/B.png')
+
+    score_ev = score_ev.resize((score_ev.width//8, score_ev.height//8))
+    score_ev_mask = score_ev.copy()
+
+    base.paste(score_ev, (1806, 345), mask=score_ev_mask)
 
     return base
 
