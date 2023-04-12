@@ -710,6 +710,115 @@ def generate(character):
     return base
 
 
+ja = {
+    'Anemo': '風',
+    'Cryo': '氷',
+    'Dendro': '草',
+    'Electro': '雷',
+    'Geo': '岩',
+    'Hydro': '水',
+    'Pyro': '炎'
+}
+
+
+class Generator:
+    def __init__(self, character) -> None:
+        self.character = character
+        self.element = character.element.name
+        self.artifacts = self.get_artifacts()
+        self.weapon = self.get_weapon()
+
+    def get_character_stats(self):
+        stats = self.character.stats
+        result = {
+            'HP': stats.FIGHT_PROP_MAX_HP.to_rounded(),
+            '攻撃力': stats.FIGHT_PROP_CUR_ATTACK.to_rounded(),
+            '防御力': stats.FIGHT_PROP_CUR_DEFENSE.to_rounded(),
+            '元素熟知': stats.FIGHT_PROP_ELEMENT_MASTERY.to_rounded(),
+            '会心率': stats.FIGHT_PROP_CRITICAL.to_percentage(),
+            '会心ダメージ': stats.FIGHT_PROP_CRITICAL_HURT.to_percentage(),
+            '元素チャージ効率': stats.FIGHT_PROP_CHARGE_EFFICIENCY.to_percentage()
+        }
+        bonuses = {
+            '与える治癒効果': stats.FIGHT_PROP_HEAL_ADD.to_percentage(),
+            '物理ダメージ': stats.FIGHT_PROP_PHYSICAL_ADD_HURT.to_percentage(),
+            '炎元素ダメージ': stats.FIGHT_PROP_FIRE_ADD_HURT.to_percentage(),
+            '雷元素ダメージ': stats.FIGHT_PROP_ELEC_ADD_HURT.to_percentage(),
+            '水元素ダメージ': stats.FIGHT_PROP_WATER_ADD_HURT.to_percentage(),
+            '風元素ダメージ': stats.FIGHT_PROP_WIND_ADD_HURT.to_percentage(),
+            '氷元素ダメージ': stats.FIGHT_PROP_ICE_ADD_HURT.to_percentage(),
+            '岩元素ダメージ': stats.FIGHT_PROP_ROCK_ADD_HURT.to_percentage(),
+            '草元素ダメージ': stats.FIGHT_PROP_GRASS_ADD_HURT.to_percentage()
+        }
+        bonus = max(bonuses, key=bonuses.get)
+        if bonuses[bonus] == 0:
+            bonus = f'{ja[self.element]}元素ダメージ'
+        result[bonus] = bonuses[bonus]
+
+        return result
+
+    def get_character_base_stats(self):
+        stats = self.character.stats
+        return {
+            'HP': stats.BASE_HP.to_rounded(),
+            '攻撃力': stats.FIGHT_PROP_BASE_ATTACK.to_rounded(),
+            '防御力': stats.FIGHT_PROP_BASE_DEFENSE.to_rounded()
+        }
+
+    def get_artifacts(self):
+        artifacts = {
+            'EQUIP_BRACER': None,
+            'EQUIP_NECKLACE': None,
+            'EQUIP_SHOES': None,
+            'EQUIP_RING': None,
+            'EQUIP_DRESS': None
+        }
+        for equip in self.character.equipments:
+            if equip.type == EquipmentsType.ARTIFACT:
+                artifacts[equip.detail.artifact_type.value] = equip
+        return artifacts
+
+    def get_weapon(self):
+        for equip in self.character.equipments:
+            if equip.type == EquipmentsType.WEAPON:
+                return equip
+
+    def calc_score(self, calc_type):
+        result = {
+            'TOTAL': 0,
+            'EQUIP_BRACER': 0,
+            'EQUIP_NECKLACE': 0,
+            'EQUIP_SHOES': 0,
+            'EQUIP_RING': 0,
+            'EQUIP_DRESS': 0
+        }
+        for artifact_type, artifact in self.artifacts.items():
+            v = {
+                'FIGHT_PROP_CRITICAL': 0,
+                'FIGHT_PROP_CRITICAL_HURT': 0,
+                'FIGHT_PROP_ATTACK_PERCENT': 0,
+                'FIGHT_PROP_HP_PERCENT': 0,
+                # 'FIGHT_PROP_DEFENSE_PERCENT': 0,
+                # 'FIGHT_PROP_CHARGE_EFFICIENCY': 0
+            }
+            for stat in artifact.detail.substats:
+                v[stat.prop_id] = stat.value
+            if calc_type == 'CRIT_ONLY':
+                score = v['FIGHT_PROP_CRITICAL'] * \
+                    2 + v['FIGHT_PROP_CRITICAL_HURT']
+            elif calc_type == 'RATED_ATK':
+                score = v['FIGHT_PROP_CRITICAL'] * \
+                    2 + v['FIGHT_PROP_CRITICAL_HURT'] + \
+                    v['FIGHT_PROP_ATTACK_PERCENT']
+            elif calc_type == 'RATED_HP':
+                score = v['FIGHT_PROP_CRITICAL'] * \
+                    2 + v['FIGHT_PROP_CRITICAL_HURT'] + \
+                    v['FIGHT_PROP_HP_PERCENT']
+            result[artifact_type] = score
+            result['TOTAL'] += score
+        return result
+
+
 if __name__ == '__main__':
     from enkanetwork import EnkaNetworkAPI
     import asyncio
@@ -717,8 +826,9 @@ if __name__ == '__main__':
     async def test():
         client = EnkaNetworkAPI(lang='jp')
         async with client:
-            data = await client.fetch_user(811455610)
-            img = generate(data.characters[5])
-            img.show()
+            data = await client.fetch_user(618285856)
+            score = Generator(data.characters[0]).calc_score('CRIT_ONLY')
+            print(score)
+            # img.show()
 
     asyncio.run(test())
