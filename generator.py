@@ -1,166 +1,9 @@
-import json
 import os
-import itertools
+import json
 from collections import Counter
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 from enkanetwork import EquipmentsType
 import requests
-
-
-def read_json(path):
-    with open(path, mode='r', encoding='utf-8') as f:
-        return json.load(f)
-
-
-def calculate_op(data: dict):
-    dup = read_json(f'{dirname}/assets/duplicate.json')
-    mapping = read_json(f'{dirname}/assets/subopM.json')
-
-    res = [None, None, None, None]
-    keymap = list(map(str, data.keys()))
-
-    is_dup = []
-    # 重複するものがあるか判定
-    for ctg, state in data.items():
-        dup_value = dup[ctg]['ov']
-        if str(state) in dup_value:
-            is_dup.append((ctg, state))
-
-    # フラグの設定
-    counter_flag = 0
-    dup_ctg = [i[0] for i in is_dup]
-    maxium_state_ct = 9
-
-    # 重複が 0 の時の処理
-    if not len(is_dup):
-        for ctg, state in data.items():
-            idx = keymap.index(ctg)
-            res[idx] = mapping[ctg][str(state)]
-        return res
-
-    # 重複するものが一つの場合
-
-    if len(is_dup) == 1:
-        # 重複のないもの
-        single_state = {c: s for c, s in data.items() if c not in dup_ctg}
-        for ctg, state in single_state.items():
-            idx = keymap.index(ctg)
-            res[idx] = mapping[ctg][str(state)]
-            counter_flag += len(mapping[ctg][str(state)])
-
-        # 重複するもの
-        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
-        long = maxium_state_ct - counter_flag
-        possiblity = []
-
-        for ctg, state in dup_state.items():
-            possiblity = dup[ctg][str(state)]
-            for p in possiblity:
-                if len(p) == long or len(p) == long-1:
-                    idx = keymap.index(ctg)
-                    res[idx] = p
-                    return res
-
-    # 重複するものが複数の場合
-    if len(is_dup) == 2:
-        single_state = {c: s for c, s in data.items() if c not in dup_ctg}
-        for ctg, state in single_state.items():
-            idx = keymap.index(ctg)
-            res[idx] = mapping[ctg][str(state)]
-            counter_flag += len(mapping[ctg][str(state)])
-
-        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
-        long = maxium_state_ct - counter_flag
-
-        sample = [[ctg, state]for ctg, state in dup_state.items()]
-
-        possiblity1 = dup[sample[0][0]][str(sample[0][1])]
-        possiblity2 = dup[sample[1][0]][str(sample[1][1])]
-
-        p1 = [len(p) for p in possiblity1]
-        p2 = [len(p) for p in possiblity2]
-
-        p = itertools.product(p1, p2)
-        for v in p:
-            if sum(v) == long or sum(v) == long-1:
-                break
-
-        idx1 = keymap.index(sample[0][0])
-        idx2 = keymap.index(sample[1][0])
-
-        res[idx1] = possiblity1[p1.index(v[0])]
-        res[idx2] = possiblity2[p2.index(v[1])]
-        return res
-
-    if len(is_dup) == 3:
-        single_state = {c: s for c, s in data.items() if c not in dup_ctg}
-        for ctg, state in single_state.items():
-            idx = keymap.index(ctg)
-            res[idx] = mapping[ctg][str(state)]
-            counter_flag += len(mapping[ctg][str(state)])
-
-        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
-        long = maxium_state_ct - counter_flag
-
-        sample = [[ctg, state]for ctg, state in dup_state.items()]
-
-        possiblity1 = dup[sample[0][0]][str(sample[0][1])]
-        possiblity2 = dup[sample[1][0]][str(sample[1][1])]
-        possiblity3 = dup[sample[2][0]][str(sample[2][1])]
-
-        p1 = [len(p) for p in possiblity1]
-        p2 = [len(p) for p in possiblity2]
-        p3 = [len(p) for p in possiblity3]
-
-        p = itertools.product(p1, p2, p3)
-        for v in p:
-            if sum(v) == long or sum(v) == long-1:
-                break
-
-        idx1 = keymap.index(sample[0][0])
-        idx2 = keymap.index(sample[1][0])
-        idx3 = keymap.index(sample[2][0])
-
-        res[idx1] = possiblity1[p1.index(v[0])]
-        res[idx2] = possiblity2[p2.index(v[1])]
-        res[idx3] = possiblity3[p3.index(v[2])]
-
-        return res
-
-    if len(is_dup) == 4:
-        dup_state = {c: s for c, s in data.items() if c in dup_ctg}
-        long = maxium_state_ct - counter_flag
-
-        sample = [[ctg, state]for ctg, state in dup_state.items()]
-
-        possiblity1 = dup[sample[0][0]][str(sample[0][1])]
-        possiblity2 = dup[sample[1][0]][str(sample[1][1])]
-        possiblity3 = dup[sample[2][0]][str(sample[2][1])]
-        possiblity4 = dup[sample[3][0]][str(sample[3][1])]
-
-        p1 = [len(p) for p in possiblity1]
-        p2 = [len(p) for p in possiblity2]
-        p3 = [len(p) for p in possiblity3]
-        p4 = [len(p) for p in possiblity4]
-
-        p = itertools.product(p1, p2, p3, p4)
-        for v in p:
-            if sum(v) == long or sum(v) == long-1:
-                break
-
-        idx1 = keymap.index(sample[0][0])
-        idx2 = keymap.index(sample[1][0])
-        idx3 = keymap.index(sample[2][0])
-        idx4 = keymap.index(sample[3][0])
-
-        res[idx1] = possiblity1[p1.index(v[0])]
-        res[idx2] = possiblity2[p2.index(v[1])]
-        res[idx3] = possiblity3[p3.index(v[2])]
-        res[idx4] = possiblity4[p4.index(v[3])]
-
-        return res
-    return
-
 
 element_ja = {
     'Anemo': '風',
@@ -171,6 +14,7 @@ element_ja = {
     'Hydro': '水',
     'Pyro': '炎'
 }
+
 prop_id_ja = {
     'FIGHT_PROP_BASE_ATTACK': '基礎攻撃力',
     'FIGHT_PROP_HP': 'HP',
@@ -195,35 +39,35 @@ prop_id_ja = {
 }
 
 point_refer = {
-    "Total": {
-        "SS": 220,
-        "S": 200,
-        "A": 180
+    'Total': {
+        'SS': 220,
+        'S': 200,
+        'A': 180
     },
-    "EQUIP_BRACER": {
-        "SS": 50,
-        "S": 45,
-        "A": 40
+    'EQUIP_BRACER': {
+        'SS': 50,
+        'S': 45,
+        'A': 40
     },
-    "EQUIP_NECKLACE": {
-        "SS": 50,
-        "S": 45,
-        "A": 40
+    'EQUIP_NECKLACE': {
+        'SS': 50,
+        'S': 45,
+        'A': 40
     },
-    "EQUIP_SHOES": {
-        "SS": 45,
-        "S": 40,
-        "A": 35
+    'EQUIP_SHOES': {
+        'SS': 45,
+        'S': 40,
+        'A': 35
     },
-    "EQUIP_RING": {
-        "SS": 45,
-        "S": 40,
-        "A": 37
+    'EQUIP_RING': {
+        'SS': 45,
+        'S': 40,
+        'A': 37
     },
-    "EQUIP_DRESS": {
-        "SS": 40,
-        "S": 35,
-        "A": 30
+    'EQUIP_DRESS': {
+        'SS': 40,
+        'S': 35,
+        'A': 30
     }
 }
 
@@ -243,10 +87,10 @@ state_op = (
 )
 
 option_map = {
-    "攻撃パーセンテージ": "攻撃%",
-    "防御パーセンテージ": "防御%",
-    "元素チャージ効率": "元チャ効率",
-    "HPパーセンテージ": "HP%",
+    '攻撃パーセンテージ': '攻撃%',
+    '防御パーセンテージ': '防御%',
+    '元素チャージ効率': '元チャ効率',
+    'HPパーセンテージ': 'HP%',
 }
 
 calc_type_text = {
@@ -262,6 +106,20 @@ def font(size):
     return ImageFont.truetype(f'{dirname}/assets/ja-jp.ttf', size)
 
 
+def fetch_artifact_props_data():
+    filepath = f'{dirname}/cache/artifact_props.json'
+    if not os.path.exists(filepath):
+        url = ('https://raw.githubusercontent.com/mrwan200/'
+               'EnkaNetwork.py/master/enkanetwork/'
+               'assets/data/artifact_props.json')
+        print(f'fetch: {url}')
+        res = requests.get(url)
+        with open(filepath, mode='w') as f:
+            f.write(res.text)
+    with open(filepath, mode='r') as f:
+        return json.loads(f.read())
+
+
 def fetch_image(name):
     filepath = f'{dirname}/cache/{name}.png'
     if not os.path.exists(filepath):
@@ -275,6 +133,8 @@ def fetch_image(name):
 
 
 class Generator:
+    artifact_props_data = fetch_artifact_props_data()
+
     def __init__(self, character) -> None:
         self.character = character
         self.element = character.element.name
@@ -535,9 +395,9 @@ class Generator:
                 draw = ImageDraw.Draw(base)
 
             if name not in disper:
-                state_len = draw.textlength(format(value, ","), font(26))
+                state_len = draw.textlength(format(value, ','), font(26))
                 draw.text((1360-state_len, 67+i*70),
-                          format(value, ","), font=font(26))
+                          format(value, ','), font=font(26))
             else:
                 state_len = draw.textlength(f'{float(value)}%', font(26))
                 draw.text((1360-state_len, 67+i*70),
@@ -547,18 +407,18 @@ class Generator:
                 base_value = base_stats[name]
                 diff = value - base_value
                 diff_len = draw.textlength(
-                    f"+{format(diff,',')}", font=font(12))
+                    f'+{format(diff,",")}', font=font(12))
                 base_value_len = draw.textlength(
-                    f"{format(base_value,',')}", font=font(12))
+                    f'{format(base_value,",")}', font=font(12))
                 draw.text(
                     (1360-diff_len, 97+i*70),
-                    f"+{format(diff,',')}",
+                    f'+{format(diff,",")}',
                     fill=(0, 255, 0, 180),
                     font=font(12)
                 )
                 draw.text(
                     (1360-diff_len-base_value_len-1, 97+i*70),
-                    f"{format(base_value,',')}",
+                    f'{format(base_value,",")}',
                     font=font(12),
                     fill=(255, 255, 255, 180)
                 )
@@ -598,9 +458,9 @@ class Generator:
                 f'''{
                     option_map.get(substat_name) or substat_name
                 }  {
-                    str(substat.value)+"%"
+                    str(substat.value)+'%'
                     if substat_name in disper
-                    else format(substat.value,",")
+                    else format(substat.value,',')
                 }''', font=font(23))
 
         draw.rounded_rectangle((1430, 45, 1470, 70), radius=1, fill='black')
@@ -612,17 +472,17 @@ class Generator:
         score_len = draw.textlength(f'{score["Total"]}', font(75))
         draw.text(
             (1652-score_len//2, 420),
-            str(score["Total"]),
+            str(score['Total']),
             font=font(75)
         )
         text_len = draw.textlength(score['Text'], font=font(24))
         draw.text((1867-text_len, 585), score['Text'], font=font(24))
 
-        if score["Total"] >= 220:
+        if score['Total'] >= 220:
             grade = Image.open(f'{dirname}/assets/grade/SS.png')
-        elif score["Total"] >= 200:
+        elif score['Total'] >= 200:
             grade = Image.open(f'{dirname}/assets/grade/S.png')
-        elif score["Total"] >= 180:
+        elif score['Total'] >= 180:
             grade = Image.open(f'{dirname}/assets/grade/A.png')
         else:
             grade = Image.open(f'{dirname}/assets/grade/B.png')
@@ -676,7 +536,7 @@ class Generator:
             )
             mainstat_icon = Image.open(
                 f'{dirname}/assets/emotes/{prop_id_ja[mainstat.prop_id]}.png'
-            ).convert("RGBA").resize((35, 35))
+            ).convert('RGBA').resize((35, 35))
             mainstat_mask = mainstat_icon.copy()
             base.paste(
                 mainstat_icon,
@@ -691,9 +551,9 @@ class Generator:
                           f'{float(mainstat.value)}%', font=font(49))
             else:
                 mainstat_value_size = draw.textlength(
-                    format(mainstat.value, ","), font(49))
+                    format(mainstat.value, ','), font(49))
                 draw.text((375+i*373-mainstat_value_size, 690),
-                          format(mainstat.value, ","), font=font(49))
+                          format(mainstat.value, ','), font=font(49))
 
             level_len = draw.textlength(f'+{artifact.level}', font(21))
             draw.rounded_rectangle((373+i*373-int(level_len), 748,
@@ -701,16 +561,16 @@ class Generator:
             draw.text((374+i*373-level_len, 749),
                       f'+{artifact.level}', font=font(21))
 
-            substats = artifact.detail.substats
             if artifact.level == 20 and artifact.detail.rarity == 5:
-                c_data = {}
-                for stat in substats:
-                    stat_name = prop_id_ja[stat.prop_id]
-                    if stat_name in disper:
-                        c_data[stat_name] = str(float(stat.value))
-                    else:
-                        c_data[stat_name] = str(stat.value)
-                psb = calculate_op(c_data)
+                affix = {}
+                for prop in artifact.props:
+                    stat_name = prop_id_ja[prop.prop_id]
+                    if stat_name not in affix.keys():
+                        affix[stat_name] = []
+                    affix[stat_name].append(
+                        self.artifact_props_data[str(prop.id)]['propValue'])
+
+            substats = artifact.detail.substats
 
             if len(substats) == 0:
                 continue
@@ -739,28 +599,28 @@ class Generator:
                               f'{float(stat.value)}%', font=font(25))
                 else:
                     substat_size = draw.textlength(
-                        format(stat.value, ","), font(25))
+                        format(stat.value, ','), font(25))
                     if stat_name in ['防御力', '攻撃力', 'HP']:
                         draw.text(
                             (375+i*373-substat_size, 811+50*a),
-                            format(stat.value, ","),
+                            format(stat.value, ','),
                             font=font(25),
                             fill=(255, 255, 255, 190)
                         )
                     else:
                         draw.text(
                             (375+i*373-substat_size, 811+50*a),
-                            format(stat.value, ","),
+                            format(stat.value, ','),
                             font=font(25),
                             fill=(255, 255, 255)
                         )
 
                 if artifact.level == 20 and artifact.detail.rarity == 5:
-                    nobi = draw.textlength(
-                        "+".join(map(str, psb[a])), font=font(11))
+                    affix_len = draw.textlength(
+                        '+'.join(map(str, affix[stat_name])), font=font(11))
                     draw.text(
-                        (375+i*373-nobi, 840+50*a),
-                        "+".join(map(str, psb[a])),
+                        (375+i*373-affix_len, 840+50*a),
+                        '+'.join(map(str, affix[stat_name])),
                         fill=(255, 255, 255, 160),
                         font=font(11)
                     )
