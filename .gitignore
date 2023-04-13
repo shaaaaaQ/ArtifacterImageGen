@@ -1,4 +1,4 @@
 /venv
-/cache/*
+/artifacter_image_gen/cache/*
 
 !.gitkeep
