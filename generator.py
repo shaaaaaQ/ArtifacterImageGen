@@ -103,7 +103,7 @@ dirname = os.path.abspath(os.path.dirname(__file__))
 
 
 def font(size):
-    return ImageFont.truetype(f'{dirname}/assets/ja-jp.ttf', size)
+    return ImageFont.truetype(f'{dirname}/assets/font.ttf', size)
 
 
 def fetch_artifact_props_data():
