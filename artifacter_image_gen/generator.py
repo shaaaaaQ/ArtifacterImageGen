@@ -38,7 +38,7 @@ prop_id_ja = {
     'FIGHT_PROP_GRASS_ADD_HURT': '草元素ダメージ',
 }
 
-point_refer = {
+default_point_refer = {
     'Total': {
         'SS': 220,
         'S': 200,
@@ -91,12 +91,6 @@ option_map = {
     '防御パーセンテージ': '防御%',
     '元素チャージ効率': '元チャ効率',
     'HPパーセンテージ': 'HP%',
-}
-
-calc_type_text = {
-    'CRIT_ONLY': '会心換算',
-    'RATED_ATK': '攻撃換算',
-    'RATED_HP': 'HP換算'
 }
 
 dirname = os.path.abspath(os.path.dirname(__file__))
@@ -196,9 +190,8 @@ class Generator:
             if equip.type == EquipmentsType.WEAPON:
                 return equip
 
-    def calc_score(self, calc_type):
+    def calc_score(self, rating):
         result = {
-            'Text': calc_type_text[calc_type],
             'Total': 0,
             'EQUIP_BRACER': 0,
             'EQUIP_NECKLACE': 0,
@@ -207,33 +200,25 @@ class Generator:
             'EQUIP_DRESS': 0
         }
         for artifact_type, artifact in self.artifacts.items():
-            v = {
-                'FIGHT_PROP_CRITICAL': 0,
-                'FIGHT_PROP_CRITICAL_HURT': 0,
-                'FIGHT_PROP_ATTACK_PERCENT': 0,
-                'FIGHT_PROP_HP_PERCENT': 0,
-                # 'FIGHT_PROP_DEFENSE_PERCENT': 0,
-                # 'FIGHT_PROP_CHARGE_EFFICIENCY': 0
-            }
+            v = {}
+            for i in prop_id_ja.keys():
+                v[i] = 0
+            score = 0
             for stat in artifact.detail.substats:
                 v[stat.prop_id] = stat.value
-            if calc_type == 'CRIT_ONLY':
-                score = v['FIGHT_PROP_CRITICAL'] * \
-                    2 + v['FIGHT_PROP_CRITICAL_HURT']
-            elif calc_type == 'RATED_ATK':
-                score = v['FIGHT_PROP_CRITICAL'] * \
-                    2 + v['FIGHT_PROP_CRITICAL_HURT'] + \
-                    v['FIGHT_PROP_ATTACK_PERCENT']
-            elif calc_type == 'RATED_HP':
-                score = v['FIGHT_PROP_CRITICAL'] * \
-                    2 + v['FIGHT_PROP_CRITICAL_HURT'] + \
-                    v['FIGHT_PROP_HP_PERCENT']
+            for r in rating:
+                score += v[r['type']] * r['rate']
             result[artifact_type] = score
             result['Total'] += score
         return result
 
-    def generate(self, calc_type):
-        score = self.calc_score(calc_type)
+    def generate(
+            self,
+            rating,
+            point_refer=default_point_refer,
+            rating_text=''
+    ):
+        score = self.calc_score(rating)
         base = Image.open(f'{dirname}/assets/base/{self.element}.png')
         base = self._draw_character(base)
         base = self._draw_weapon(base)
@@ -244,8 +229,8 @@ class Generator:
         base = self._draw_skill_level(base)
         base = self._draw_character_stats(base)
         base = self._draw_weapon_stats(base)
-        base = self._draw_total_score(base, score)
-        base = self._draw_artifacts(base, score)
+        base = self._draw_total_score(base, score, rating_text)
+        base = self._draw_artifacts(base, score, point_refer)
 
         return base
 
@@ -467,7 +452,7 @@ class Generator:
         draw.text((1433, 46), f'R{weapon.refinement}', font=font(24))
         return base
 
-    def _draw_total_score(self, base, score):
+    def _draw_total_score(self, base, score, rating_text):
         draw = ImageDraw.Draw(base)
         score_len = draw.textlength(f'{score["Total"]}', font(75))
         draw.text(
@@ -475,8 +460,8 @@ class Generator:
             str(score['Total']),
             font=font(75)
         )
-        text_len = draw.textlength(score['Text'], font=font(24))
-        draw.text((1867-text_len, 585), score['Text'], font=font(24))
+        text_len = draw.textlength(rating_text, font=font(24))
+        draw.text((1867-text_len, 585), rating_text, font=font(24))
 
         if score['Total'] >= 220:
             grade = Image.open(f'{dirname}/assets/grade/SS.png')
@@ -493,7 +478,7 @@ class Generator:
         base.paste(grade, (1806, 345), mask=grade_mask)
         return base
 
-    def _draw_artifacts(self, base, score):
+    def _draw_artifacts(self, base, score, point_refer):
         draw = ImageDraw.Draw(base)
         artifacts = self.artifacts
         artifact_type = []
@@ -670,10 +655,16 @@ if __name__ == '__main__':
     import asyncio
 
     async def test():
+        r = [
+            {'type': 'FIGHT_PROP_CRITICAL', 'rate': 2},
+            {'type': 'FIGHT_PROP_CRITICAL_HURT', 'rate': 1},
+            {'type': 'FIGHT_PROP_ATTACK_PERCENT', 'rate': 1}
+        ]
         client = EnkaNetworkAPI(lang='jp')
         async with client:
             data = await client.fetch_user(618285856)
-            img = Generator(data.characters[0]).generate('RATED_ATK')
+            img = Generator(data.characters[0]).generate(
+                rating=r, rating_text='攻撃%!!')
             img.show()
 
     asyncio.run(test())
