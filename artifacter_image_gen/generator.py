@@ -38,39 +38,6 @@ prop_id_ja = {
     'FIGHT_PROP_GRASS_ADD_HURT': '草元素ダメージ',
 }
 
-default_point_refer = {
-    'Total': {
-        'SS': 220,
-        'S': 200,
-        'A': 180
-    },
-    'EQUIP_BRACER': {
-        'SS': 50,
-        'S': 45,
-        'A': 40
-    },
-    'EQUIP_NECKLACE': {
-        'SS': 50,
-        'S': 45,
-        'A': 40
-    },
-    'EQUIP_SHOES': {
-        'SS': 45,
-        'S': 40,
-        'A': 35
-    },
-    'EQUIP_RING': {
-        'SS': 45,
-        'S': 40,
-        'A': 37
-    },
-    'EQUIP_DRESS': {
-        'SS': 40,
-        'S': 35,
-        'A': 30
-    }
-}
-
 disper = [
     '会心率', '会心ダメージ', '攻撃パーセンテージ',
     '防御パーセンテージ', 'HPパーセンテージ', '水元素ダメージ',
@@ -190,7 +157,7 @@ class Generator:
             if equip.type == EquipmentsType.WEAPON:
                 return equip
 
-    def calc_score(self, rating):
+    def calc_score(self, rates):
         result = {
             'Total': 0,
             'EQUIP_BRACER': 0,
@@ -206,7 +173,7 @@ class Generator:
             score = 0
             for stat in artifact.detail.substats:
                 v[stat.prop_id] = stat.value
-            for r in rating:
+            for r in rates:
                 score += v[r['type']] * r['rate']
             result[artifact_type] = score
             result['Total'] += score
@@ -214,11 +181,11 @@ class Generator:
 
     def generate(
             self,
-            rating,
-            point_refer=default_point_refer,
-            rating_text=''
+            rates,
+            point_refer,
+            label=''
     ):
-        score = self.calc_score(rating)
+        score = self.calc_score(rates)
         base = Image.open(f'{dirname}/assets/base/{self.element}.png')
         base = self._draw_character(base)
         base = self._draw_weapon(base)
@@ -229,7 +196,7 @@ class Generator:
         base = self._draw_skill_level(base)
         base = self._draw_character_stats(base)
         base = self._draw_weapon_stats(base)
-        base = self._draw_total_score(base, score, rating_text)
+        base = self._draw_total_score(base, score, label)
         base = self._draw_artifacts(base, score, point_refer)
 
         return base
@@ -452,16 +419,17 @@ class Generator:
         draw.text((1433, 46), f'R{weapon.refinement}', font=font(24))
         return base
 
-    def _draw_total_score(self, base, score, rating_text):
+    def _draw_total_score(self, base, score, label):
         draw = ImageDraw.Draw(base)
-        score_len = draw.textlength(f'{score["Total"]}', font(75))
+        total_score = float(format(score["Total"], '.1f'))
+        score_len = draw.textlength(str(total_score), font(75))
         draw.text(
             (1652-score_len//2, 420),
-            str(score['Total']),
+            str(total_score),
             font=font(75)
         )
-        text_len = draw.textlength(rating_text, font=font(24))
-        draw.text((1867-text_len, 585), rating_text, font=font(24))
+        text_len = draw.textlength(label, font=font(24))
+        draw.text((1867-text_len, 585), label, font=font(24))
 
         if score['Total'] >= 220:
             grade = Image.open(f'{dirname}/assets/grade/SS.png')
@@ -610,7 +578,7 @@ class Generator:
                         font=font(11)
                     )
 
-            artifact_score = float(score[parts])
+            artifact_score = float(format(score[parts], '.1f'))
             score_len = draw.textlength(str(artifact_score), font(36))
             draw.text((380+i*373-score_len, 1016),
                       str(artifact_score), font=font(36))
@@ -655,16 +623,51 @@ if __name__ == '__main__':
     import asyncio
 
     async def test():
-        r = [
+        rates = [
             {'type': 'FIGHT_PROP_CRITICAL', 'rate': 2},
             {'type': 'FIGHT_PROP_CRITICAL_HURT', 'rate': 1},
             {'type': 'FIGHT_PROP_ATTACK_PERCENT', 'rate': 1}
         ]
+        point_refer = {
+            'Total': {
+                'SS': 220,
+                'S': 200,
+                'A': 180
+            },
+            'EQUIP_BRACER': {
+                'SS': 50,
+                'S': 45,
+                'A': 40
+            },
+            'EQUIP_NECKLACE': {
+                'SS': 50,
+                'S': 45,
+                'A': 40
+            },
+            'EQUIP_SHOES': {
+                'SS': 45,
+                'S': 40,
+                'A': 35
+            },
+            'EQUIP_RING': {
+                'SS': 45,
+                'S': 40,
+                'A': 37
+            },
+            'EQUIP_DRESS': {
+                'SS': 40,
+                'S': 35,
+                'A': 30
+            }
+        }
         client = EnkaNetworkAPI(lang='jp')
         async with client:
             data = await client.fetch_user(618285856)
             img = Generator(data.characters[0]).generate(
-                rating=r, rating_text='攻撃%!!')
+                rates=rates,
+                point_refer=point_refer,
+                label='攻撃%!!'
+            )
             img.show()
 
     asyncio.run(test())
