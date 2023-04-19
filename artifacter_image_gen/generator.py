@@ -170,6 +170,8 @@ class Generator:
             'EQUIP_DRESS': 0
         }
         for artifact_type, artifact in self.artifacts.items():
+            if not artifact:
+                continue
             v = {}
             for i in prop_id_ja.keys():
                 v[i] = 0
