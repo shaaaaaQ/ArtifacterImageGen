@@ -1,9 +1,12 @@
 import os
 import json
+import logging
 from collections import Counter
 from PIL import Image, ImageFont, ImageDraw, ImageEnhance
 from enkanetwork import EquipmentsType
 import requests
+
+logger = logging.getLogger(__name__)
 
 element_ja = {
     'Anemo': '風',
@@ -73,7 +76,7 @@ def fetch_artifact_props_data():
         url = ('https://raw.githubusercontent.com/mrwan200/'
                'EnkaNetwork.py/master/enkanetwork/'
                'assets/data/artifact_props.json')
-        print(f'fetch: {url}')
+        logger.debug(f'fetch: {url}')
         res = requests.get(url)
         with open(filepath, mode='w') as f:
             f.write(res.text)
@@ -85,7 +88,7 @@ def fetch_image(name):
     filepath = f'{dirname}/cache/{name}.png'
     if not os.path.exists(filepath):
         url = f'https://enka.network/ui/{name}.png'
-        print(f'fetch: {url}')
+        logger.debug(f'fetch: {url}')
         res = requests.get(url)
         image = res.content
         with open(filepath, mode='wb') as f:
@@ -209,7 +212,10 @@ class Generator:
         image = image.resize(
             (int(image.width * 0.75), int(image.height * 0.75)))
         mask1 = image.copy()
-        mask2 = Image.open(f'{dirname}/assets/character_mask.png')
+        if character.name == 'アルハイゼン':
+            mask2 = Image.open(f'{dirname}/assets/alhaitham_mask.png')
+        else:
+            mask2 = Image.open(f'{dirname}/assets/character_mask.png')
         mask2 = mask2.convert('L')
         mask2 = mask2.resize(image.size)
         shadow = Image.open(f'{dirname}/assets/shadow.png')
