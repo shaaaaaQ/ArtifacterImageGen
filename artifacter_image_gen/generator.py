@@ -522,14 +522,13 @@ class Generator:
             draw.text((374+i*373-level_len, 749),
                       f'+{artifact.level}', font=font(21))
 
-            if artifact.level == 20 and artifact.detail.rarity == 5:
-                affix = {}
-                for prop in artifact.props:
-                    stat_name = prop_id_ja[prop.prop_id]
-                    if stat_name not in affix.keys():
-                        affix[stat_name] = []
-                    affix[stat_name].append(
-                        self.artifact_props_data[str(prop.id)]['propValue'])
+            affix = {}
+            for prop in artifact.props:
+                stat_name = prop_id_ja[prop.prop_id]
+                if stat_name not in affix.keys():
+                    affix[stat_name] = []
+                affix[stat_name].append(
+                    self.artifact_props_data[str(prop.id)]['propValue'])
 
             substats = artifact.detail.substats
 
@@ -576,15 +575,14 @@ class Generator:
                             fill=(255, 255, 255)
                         )
 
-                if artifact.level == 20 and artifact.detail.rarity == 5:
-                    affix_len = draw.textlength(
-                        '+'.join(map(str, affix[stat_name])), font=font(11))
-                    draw.text(
-                        (375+i*373-affix_len, 840+50*a),
-                        '+'.join(map(str, affix[stat_name])),
-                        fill=(255, 255, 255, 160),
-                        font=font(11)
-                    )
+                affix_len = draw.textlength(
+                    '+'.join(map(str, affix[stat_name])), font=font(11))
+                draw.text(
+                    (375+i*373-affix_len, 840+50*a),
+                    '+'.join(map(str, affix[stat_name])),
+                    fill=(255, 255, 255, 160),
+                    font=font(11)
+                )
 
             artifact_score = float(format(score[parts], '.1f'))
             score_len = draw.textlength(str(artifact_score), font(36))
