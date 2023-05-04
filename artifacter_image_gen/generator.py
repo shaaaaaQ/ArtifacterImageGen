@@ -565,9 +565,6 @@ class Generator:
 
             substats = artifact.detail.substats
 
-            if len(substats) == 0:
-                continue
-
             for a, stat in enumerate(substats):
                 stat_name = prop_id_ja[stat.prop_id]
                 if stat_name in ['HP', '攻撃力', '防御力']:
