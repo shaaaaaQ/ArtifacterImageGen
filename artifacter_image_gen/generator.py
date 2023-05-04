@@ -63,6 +63,39 @@ option_map = {
     'HPパーセンテージ': 'HP%',
 }
 
+point_refer = {
+    'Total': {
+        'SS': 220,
+        'S': 200,
+        'A': 180
+    },
+    'EQUIP_BRACER': {
+        'SS': 50,
+        'S': 45,
+        'A': 40
+    },
+    'EQUIP_NECKLACE': {
+        'SS': 50,
+        'S': 45,
+        'A': 40
+    },
+    'EQUIP_SHOES': {
+        'SS': 45,
+        'S': 40,
+        'A': 35
+    },
+    'EQUIP_RING': {
+        'SS': 45,
+        'S': 40,
+        'A': 37
+    },
+    'EQUIP_DRESS': {
+        'SS': 40,
+        'S': 35,
+        'A': 30
+    }
+}
+
 dirname = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -178,8 +211,8 @@ class Generator:
             score = 0
             for stat in artifact.detail.substats:
                 v[stat.prop_id] = stat.value
-            for r in rates:
-                score += v[r['type']] * r['rate']
+            for prop_id, rate in rates.items():
+                score += v[prop_id] * rate
             result[artifact_type] = score
             result['Total'] += score
         return result
@@ -187,7 +220,7 @@ class Generator:
     def generate(
             self,
             rates,
-            point_refer,
+            point_refer=point_refer,
             label=''
     ):
         score = self.calc_score(rates)
@@ -629,49 +662,16 @@ if __name__ == '__main__':
     import asyncio
 
     async def test():
-        rates = [
-            {'type': 'FIGHT_PROP_CRITICAL', 'rate': 2},
-            {'type': 'FIGHT_PROP_CRITICAL_HURT', 'rate': 1},
-            {'type': 'FIGHT_PROP_ATTACK_PERCENT', 'rate': 1}
-        ]
-        point_refer = {
-            'Total': {
-                'SS': 220,
-                'S': 200,
-                'A': 180
-            },
-            'EQUIP_BRACER': {
-                'SS': 50,
-                'S': 45,
-                'A': 40
-            },
-            'EQUIP_NECKLACE': {
-                'SS': 50,
-                'S': 45,
-                'A': 40
-            },
-            'EQUIP_SHOES': {
-                'SS': 45,
-                'S': 40,
-                'A': 35
-            },
-            'EQUIP_RING': {
-                'SS': 45,
-                'S': 40,
-                'A': 37
-            },
-            'EQUIP_DRESS': {
-                'SS': 40,
-                'S': 35,
-                'A': 30
-            }
+        rates = {
+            'FIGHT_PROP_CRITICAL': 2,
+            'FIGHT_PROP_CRITICAL_HURT': 1,
+            'FIGHT_PROP_ATTACK_PERCENT': 1
         }
         client = EnkaNetworkAPI(lang='jp')
         async with client:
             data = await client.fetch_user(618285856)
             img = Generator(data.characters[0]).generate(
                 rates=rates,
-                point_refer=point_refer,
                 label='攻撃%!!'
             )
             img.show()
