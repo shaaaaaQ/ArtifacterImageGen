@@ -243,11 +243,24 @@ class Generator:
         character = self.character
         image = fetch_image(character.image.banner.filename)
         image = image.convert('RGBA')
+        if character.id == 10000005:
+            # 空
+            tmp = Image.new('RGBA', (2048, 1024), (255, 255, 255, 0))
+            image = image.resize((909, 1024))
+            tmp.paste(image, (570, 0))
+            image = tmp
+        elif character.id == 10000007:
+            # 蛍
+            tmp = Image.new('RGBA', (2048, 1024), (255, 255, 255, 0))
+            image = image.resize((880, 1024))
+            tmp.paste(image, (584, 0))
+            image = tmp
         image = image.crop((289, 0, 1728, 1024))
         image = image.resize(
             (int(image.width * 0.75), int(image.height * 0.75)))
         mask1 = image.copy()
-        if character.name == 'アルハイゼン':
+        if character.id == 10000078:
+            # アルハイゼン
             mask2 = Image.open(f'{dirname}/assets/alhaitham_mask.png')
         else:
             mask2 = Image.open(f'{dirname}/assets/character_mask.png')
