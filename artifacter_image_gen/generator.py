@@ -29,7 +29,7 @@ prop_id_ja = {
     'FIGHT_PROP_CRITICAL': '会心率',
     'FIGHT_PROP_CRITICAL_HURT': '会心ダメージ',
     'FIGHT_PROP_CHARGE_EFFICIENCY': '元素チャージ効率',
-    'FIGHT_PROP_HEAL_ADD': '与える治癒効果',
+    'FIGHT_PROP_HEAL_ADD': '与える治療効果',
     'FIGHT_PROP_ELEMENT_MASTERY': '元素熟知',
     'FIGHT_PROP_PHYSICAL_ADD_HURT': '物理ダメージ',
     'FIGHT_PROP_FIRE_ADD_HURT': '炎元素ダメージ',
@@ -45,9 +45,8 @@ disper = [
     '会心率', '会心ダメージ', '攻撃パーセンテージ',
     '防御パーセンテージ', 'HPパーセンテージ', '水元素ダメージ',
     '物理ダメージ', '風元素ダメージ', '岩元素ダメージ',
-    '炎元素ダメージ', '与える治癒効果', '与える治療効果',
-    '雷元素ダメージ', '氷元素ダメージ', '草元素ダメージ',
-    '与える治癒効果', '元素チャージ効率'
+    '炎元素ダメージ', '与える治療効果', '雷元素ダメージ',
+    '氷元素ダメージ', '草元素ダメージ', '元素チャージ効率'
 ]
 
 state_op = (
@@ -150,7 +149,7 @@ class Generator:
             '元素チャージ効率': stats.FIGHT_PROP_CHARGE_EFFICIENCY.to_percentage()
         }
         bonuses = {
-            '与える治癒効果': stats.FIGHT_PROP_HEAL_ADD.to_percentage(),
+            '与える治療効果': stats.FIGHT_PROP_HEAL_ADD.to_percentage(),
             '物理ダメージ': stats.FIGHT_PROP_PHYSICAL_ADD_HURT.to_percentage(),
             '炎元素ダメージ': stats.FIGHT_PROP_FIRE_ADD_HURT.to_percentage(),
             '雷元素ダメージ': stats.FIGHT_PROP_ELEC_ADD_HURT.to_percentage(),
