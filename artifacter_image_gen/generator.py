@@ -243,8 +243,7 @@ class Generator:
             tmp.paste(image, (584, 0))
             image = tmp
         image = image.crop((289, 0, 1728, 1024))
-        image = image.resize(
-            (int(image.width * 0.75), int(image.height * 0.75)))
+        image = image.resize((int(image.width * 0.75), int(image.height * 0.75)))
         mask1 = image.copy()
         if character.id == 10000078:
             # アルハイゼン
@@ -277,8 +276,7 @@ class Generator:
         rarity = self.weapon.detail.rarity
         image = Image.open(f"{dirname}/assets/rarity/{rarity}.png")
         image = image.convert("RGBA")
-        image = image.resize(
-            (int(image.width * 0.97), int(image.height * 0.97)))
+        image = image.resize((int(image.width * 0.97), int(image.height * 0.97)))
         paste = Image.new("RGBA", base.size, (255, 255, 255, 0))
         mask = image.copy()
         paste.paste(image, (1422, 173), mask=mask)
@@ -297,15 +295,8 @@ class Generator:
             image = image.convert("RGBA")
             mask = image.copy()
             paste = Image.new("RGBA", bg.size, (255, 255, 255, 0))
-            paste.paste(
-                image,
-                (paste.width // 2 - 25, paste.height // 2 - 25),
-                mask
-            )
-            bg_paste.paste(
-                Image.alpha_composite(bg, paste),
-                (15, 330 + i * 105)
-            )
+            paste.paste(image, (paste.width // 2 - 25, paste.height // 2 - 25), mask)
+            bg_paste.paste(Image.alpha_composite(bg, paste), (15, 330 + i * 105))
         base = Image.alpha_composite(base, bg_paste)
         return base
 
@@ -313,8 +304,7 @@ class Generator:
         bg = Image.open(f"{dirname}/assets/constellation/{self.element}.png")
         bg = bg.resize((90, 90))
         bg = bg.convert("RGBA")
-        lock = Image.open(
-            f"{dirname}/assets/constellation/{self.element}_lock.png")
+        lock = Image.open(f"{dirname}/assets/constellation/{self.element}_lock.png")
         lock = lock.resize((90, 90))
         lock = lock.convert("RGBA")
         lock_mask = lock.copy()
@@ -333,10 +323,7 @@ class Generator:
                     (int(paste.width / 2) - 25, int(paste.height / 2) - 23),
                     mask=mask,
                 )
-                bg_paste.paste(
-                    Image.alpha_composite(bg, paste),
-                    (666, -10 + i * 93)
-                )
+                bg_paste.paste(Image.alpha_composite(bg, paste), (666, -10 + i * 93))
         base = Image.alpha_composite(base, bg_paste)
         return base
 
@@ -345,40 +332,24 @@ class Generator:
         character = self.character
 
         draw.text((30, 20), character.name, font=font(48))
-        level_length = draw.textlength(
-            "Lv." + str(character.level),
-            font=font(25)
-        )
+        level_length = draw.textlength("Lv." + str(character.level), font=font(25))
         friendship_length = draw.textlength(
-            str(character.friendship_level),
-            font=font(25)
+            str(character.friendship_level), font=font(25)
         )
         draw.text((35, 75), "Lv." + str(character.level), font=font(25))
         draw.rounded_rectangle(
-            (
-                35 + level_length + 5,
-                74,
-                77 + level_length + friendship_length,
-                102
-            ),
+            (35 + level_length + 5, 74, 77 + level_length + friendship_length, 102),
             radius=2,
             fill="black",
         )
-        friendship_icon = Image.open(
-            f"{dirname}/assets/friendship.png").convert("RGBA")
+        friendship_icon = Image.open(f"{dirname}/assets/friendship.png").convert("RGBA")
         friendship_icon = friendship_icon.resize(
             (int(friendship_icon.width * (24 / friendship_icon.height)), 24)
         )
         friendship_icon_mask = friendship_icon.copy()
-        base.paste(
-            friendship_icon,
-            (42 + int(level_length), 76),
-            friendship_icon_mask
-        )
+        base.paste(friendship_icon, (42 + int(level_length), 76), friendship_icon_mask)
         draw.text(
-            (73 + level_length, 74),
-            str(character.friendship_level),
-            font=font(25)
+            (73 + level_length, 74), str(character.friendship_level), font=font(25)
         )
         return base
 
@@ -415,23 +386,18 @@ class Generator:
             if name not in disper:
                 state_len = draw.textlength(format(value, ","), font(26))
                 draw.text(
-                    (1360 - state_len, 67 + i * 70),
-                    format(value, ","),
-                    font=font(26)
+                    (1360 - state_len, 67 + i * 70), format(value, ","), font=font(26)
                 )
             else:
                 state_len = draw.textlength(f"{float(value)}%", font(26))
                 draw.text(
-                    (1360 - state_len, 67 + i * 70),
-                    f"{float(value)}%",
-                    font=font(26)
+                    (1360 - state_len, 67 + i * 70), f"{float(value)}%", font=font(26)
                 )
 
             if name in ["HP", "防御力", "攻撃力"]:
                 base_value = base_stats[name]
                 diff = value - base_value
-                diff_len = draw.textlength(
-                    f'+{format(diff,",")}', font=font(12))
+                diff_len = draw.textlength(f'+{format(diff,",")}', font=font(12))
                 base_value_len = draw.textlength(
                     f'{format(base_value,",")}', font=font(12)
                 )
@@ -465,9 +431,7 @@ class Generator:
         base_atk_mask = base_atk_image.copy()
         base.paste(base_atk_image, (1600, 120), mask=base_atk_mask)
         draw.text(
-            (1623, 120),
-            f"基礎攻撃力  {weapon.detail.mainstats.value}",
-            font=font(23)
+            (1623, 120), f"基礎攻撃力  {weapon.detail.mainstats.value}", font=font(23)
         )
 
         if weapon.detail.substats:
@@ -499,8 +463,7 @@ class Generator:
         draw = ImageDraw.Draw(base)
         total_score = float(format(score["Total"], ".1f"))
         score_len = draw.textlength(str(total_score), font(75))
-        draw.text((1652 - score_len // 2, 420),
-                  str(total_score), font=font(75))
+        draw.text((1652 - score_len // 2, 420), str(total_score), font=font(75))
         text_len = draw.textlength(label, font=font(24))
         draw.text((1867 - text_len, 585), label, font=font(24))
 
@@ -532,8 +495,7 @@ class Generator:
             image = fetch_image(artifact.detail.icon.filename)
             image = image.resize((256, 256))
             image = ImageEnhance.Brightness(image).enhance(0.6)
-            image = image.resize(
-                (int(image.width * 1.3), int(image.height * 1.3)))
+            image = image.resize((int(image.width * 1.3), int(image.height * 1.3)))
             mask1 = Image.open(f"{dirname}/assets/artifact_mask.png")
             mask1 = mask1.convert("L")
             mask1 = mask1.resize(image.size)
@@ -563,8 +525,7 @@ class Generator:
             )
             mainstat_icon = (
                 Image.open(
-                    f"{dirname}/assets/emotes/"
-                    f"{prop_id_ja[mainstat.prop_id]}.png"
+                    f"{dirname}/assets/emotes/" f"{prop_id_ja[mainstat.prop_id]}.png"
                 )
                 .convert("RGBA")
                 .resize((35, 35))
@@ -602,9 +563,7 @@ class Generator:
                 radius=2,
             )
             draw.text(
-                (374 + i * 373 - level_len, 749),
-                f"+{artifact.level}",
-                font=font(21)
+                (374 + i * 373 - level_len, 749), f"+{artifact.level}", font=font(21)
             )
 
             affix = {}
@@ -633,26 +592,21 @@ class Generator:
                         option_map.get(stat_name) or stat_name,
                         font=font(25),
                     )
-                substat_icon = Image.open(
-                    f"{dirname}/assets/emotes/{stat_name}.png")
+                substat_icon = Image.open(f"{dirname}/assets/emotes/{stat_name}.png")
                 substat_icon = substat_icon.resize((30, 30))
                 substat_mask = substat_icon.copy()
                 base.paste(
-                    substat_icon,
-                    (44 + 373 * i, 811 + 50 * a),
-                    mask=substat_mask
+                    substat_icon, (44 + 373 * i, 811 + 50 * a), mask=substat_mask
                 )
                 if stat_name in disper:
-                    substat_size = draw.textlength(
-                        f"{float(stat.value)}%", font(25))
+                    substat_size = draw.textlength(f"{float(stat.value)}%", font(25))
                     draw.text(
                         (375 + i * 373 - substat_size, 811 + 50 * a),
                         f"{float(stat.value)}%",
                         font=font(25),
                     )
                 else:
-                    substat_size = draw.textlength(
-                        format(stat.value, ","), font(25))
+                    substat_size = draw.textlength(format(stat.value, ","), font(25))
                     if stat_name in ["防御力", "攻撃力", "HP"]:
                         draw.text(
                             (375 + i * 373 - substat_size, 811 + 50 * a),
@@ -681,9 +635,7 @@ class Generator:
             artifact_score = float(format(score[parts], ".1f"))
             score_len = draw.textlength(str(artifact_score), font(36))
             draw.text(
-                (380 + i * 373 - score_len, 1016),
-                str(artifact_score),
-                font=font(36)
+                (380 + i * 373 - score_len, 1016), str(artifact_score), font=font(36)
             )
             draw.text(
                 (295 + i * 373 - score_len, 1025),
@@ -708,12 +660,10 @@ class Generator:
 
             base.paste(grade_image, (85 + 373 * i, 1013), mask=grade_mask)
 
-        set_bonus = Counter(
-            [x for x in artifact_type if artifact_type.count(x) >= 2])
+        set_bonus = Counter([x for x in artifact_type if artifact_type.count(x) >= 2])
         for i, (n, q) in enumerate(set_bonus.items()):
             if len(set_bonus) == 2:
-                draw.text((1536, 243 + i * 35), n,
-                          fill=(0, 255, 0), font=font(23))
+                draw.text((1536, 243 + i * 35), n, fill=(0, 255, 0), font=font(23))
                 draw.rounded_rectangle(
                     (1818, 243 + i * 35, 1862, 266 + i * 35), 1, "black"
                 )
@@ -738,8 +688,7 @@ if __name__ == "__main__":
         client = EnkaNetworkAPI(lang="jp")
         async with client:
             data = await client.fetch_user(618285856)
-            img = Generator(data.characters[0]).generate(
-                rates=rates, label="攻撃%!!")
+            img = Generator(data.characters[0]).generate(rates=rates, label="攻撃%!!")
             img.show()
 
     asyncio.run(test())
