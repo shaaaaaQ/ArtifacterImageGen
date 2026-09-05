@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "artifacter-image-gen"
+version = "0.2.0"
+description = "Generate Genshin Impact build cards from enka.py character data"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "enka>=2.5,<3",
+    "pillow>=10",
+]
+
+[project.scripts]
+artifacter-image-gen = "artifacter_image_gen.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["artifacter_image_gen*"]
+
+[tool.setuptools.package-data]
+artifacter_image_gen = ["assets/**/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

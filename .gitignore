@@ -1,4 +1,21 @@
-/venv
-/artifacter_image_gen/cache/*
+# Virtual environments
+/venv/
+/.venv/
 
-!.gitkeep
+# Python build outputs
+/build/
+/dist/
+*.egg-info/
+
+# Python tool caches
+__pycache__/
+*.py[cod]
+/.pytest_cache/
+/.ruff_cache/
+/.mypy_cache/
+/.coverage
+/htmlcov/
+
+# Runtime caches
+/.enka_py/
+/.tmp-enka/
