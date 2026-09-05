@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 ASSET_DIR = Path(__file__).parent / "assets"
+CHARACTER_CANVAS_SIZE = (2048, 1024)
 
 
 def font(size):
@@ -45,6 +46,19 @@ def _grade(score: float, thresholds: Mapping[str, float]) -> str:
         if score >= thresholds[grade]:
             return grade
     return "B"
+
+
+def _normalize_character_art(image: Image.Image) -> Image.Image:
+    """Center non-standard gacha art on the canvas expected by the layout."""
+    if image.size == CHARACTER_CANVAS_SIZE:
+        return image
+
+    canvas_width, canvas_height = CHARACTER_CANVAS_SIZE
+    width = round(image.width * canvas_height / image.height)
+    image = image.resize((width, canvas_height))
+    canvas = Image.new("RGBA", CHARACTER_CANVAS_SIZE, (255, 255, 255, 0))
+    canvas.paste(image, (round((canvas_width - width) / 2), 0))
+    return canvas
 
 
 class Generator:
@@ -186,18 +200,7 @@ class Generator:
         character_icon = character.costume.icon if character.costume else character.icon
         image = self._image(character_icon.gacha)
         image = image.convert("RGBA")
-        if character.id == 10000005:
-            # 空
-            tmp = Image.new("RGBA", (2048, 1024), (255, 255, 255, 0))
-            image = image.resize((909, 1024))
-            tmp.paste(image, (570, 0))
-            image = tmp
-        elif character.id == 10000007:
-            # 蛍
-            tmp = Image.new("RGBA", (2048, 1024), (255, 255, 255, 0))
-            image = image.resize((880, 1024))
-            tmp.paste(image, (584, 0))
-            image = tmp
+        image = _normalize_character_art(image)
         image = image.crop((289, 0, 1728, 1024))
         image = image.resize((int(image.width * 0.75), int(image.height * 0.75)))
         mask1 = image.copy()

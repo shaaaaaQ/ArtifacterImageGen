@@ -1,7 +1,9 @@
 import unittest
 from types import SimpleNamespace
 
-from artifacter_image_gen.generator import Generator
+from PIL import Image
+
+from artifacter_image_gen.generator import Generator, _normalize_character_art
 
 
 def typed_stat(name, value):
@@ -75,6 +77,14 @@ class GeneratorTests(unittest.TestCase):
         rolls = self.generator._artifact_rolls(self.artifact)
         self.assertEqual(rolls["会心率"], [3.9])
         self.assertEqual(rolls["会心ダメージ"], [5.4])
+
+    def test_centers_non_standard_character_art(self):
+        image = Image.new("RGBA", (1125, 900), "white")
+
+        normalized = _normalize_character_art(image)
+
+        self.assertEqual(normalized.size, (2048, 1024))
+        self.assertEqual(normalized.getbbox(), (384, 0, 1664, 1024))
 
 
 if __name__ == "__main__":
