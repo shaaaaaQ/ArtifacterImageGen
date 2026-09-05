@@ -46,8 +46,9 @@ class AssetCache:
         self.timeout = timeout
 
     def image(self, url: str) -> Image.Image:
-        suffix = Path(urlsplit(url).path).suffix or ".png"
-        basename = Path(urlsplit(url).path).stem or "image"
+        url_path = Path(urlsplit(url).path)
+        suffix = url_path.suffix or ".png"
+        basename = url_path.stem or "image"
         digest = hashlib.sha256(url.encode()).hexdigest()[:12]
         path = self.directory / "images" / f"{basename}-{digest}{suffix}"
         if not path.exists():

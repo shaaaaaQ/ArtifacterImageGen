@@ -48,6 +48,10 @@ def _grade(score: float, thresholds: Mapping[str, float]) -> str:
     return "B"
 
 
+def _format_stat_value(name: str, value: float | int) -> str:
+    return f"{float(value)}%" if name in PERCENTAGE_NAMES else format(value, ",")
+
+
 def _normalize_character_art(image: Image.Image) -> Image.Image:
     """Center non-standard gacha art on the canvas expected by the layout."""
     if image.size == CHARACTER_CANVAS_SIZE:
@@ -161,14 +165,7 @@ class Generator:
         return artifacts
 
     def calc_score(self, rates):
-        result = {
-            "Total": 0,
-            "EQUIP_BRACER": 0,
-            "EQUIP_NECKLACE": 0,
-            "EQUIP_SHOES": 0,
-            "EQUIP_RING": 0,
-            "EQUIP_DRESS": 0,
-        }
+        result = dict.fromkeys(("Total", *ARTIFACT_SLOTS), 0)
         for artifact_type, artifact in self.artifacts.items():
             if not artifact:
                 continue
@@ -344,16 +341,9 @@ class Generator:
                 base = Image.alpha_composite(base, icon_paste)
                 draw = ImageDraw.Draw(base)
 
-            if name not in PERCENTAGE_NAMES:
-                state_len = draw.textlength(format(value, ","), font=font(26))
-                draw.text(
-                    (1360 - state_len, 67 + i * 70), format(value, ","), font=font(26)
-                )
-            else:
-                state_len = draw.textlength(f"{float(value)}%", font=font(26))
-                draw.text(
-                    (1360 - state_len, 67 + i * 70), f"{float(value)}%", font=font(26)
-                )
+            value_text = _format_stat_value(name, value)
+            state_len = draw.textlength(value_text, font=font(26))
+            draw.text((1360 - state_len, 67 + i * 70), value_text, font=font(26))
 
             if name in ["HP", "防御力", "攻撃力"]:
                 base_value = base_stats[name]
@@ -438,10 +428,8 @@ class Generator:
 
     def _draw_artifacts(self, base, score, point_refer):
         draw = ImageDraw.Draw(base)
-        artifacts = self.artifacts
         artifact_type = []
-        for i, parts in enumerate(artifacts.keys()):
-            artifact = artifacts.get(parts)
+        for i, (parts, artifact) in enumerate(self.artifacts.items()):
             if not artifact:
                 continue
             artifact_type.append(artifact.set_name)
@@ -488,24 +476,13 @@ class Generator:
                 mask=mainstat_mask,
             )
 
-            if mainstat_name in PERCENTAGE_NAMES:
-                mainstat_value_size = draw.textlength(
-                    f"{float(mainstat.value)}%", font(49)
-                )
-                draw.text(
-                    (375 + i * 373 - mainstat_value_size, 690),
-                    f"{float(mainstat.value)}%",
-                    font=font(49),
-                )
-            else:
-                mainstat_value_size = draw.textlength(
-                    format(mainstat.value, ","), font(49)
-                )
-                draw.text(
-                    (375 + i * 373 - mainstat_value_size, 690),
-                    format(mainstat.value, ","),
-                    font=font(49),
-                )
+            mainstat_text = _format_stat_value(mainstat_name, mainstat.value)
+            mainstat_value_size = draw.textlength(mainstat_text, font(49))
+            draw.text(
+                (375 + i * 373 - mainstat_value_size, 690),
+                mainstat_text,
+                font=font(49),
+            )
 
             level_len = draw.textlength(f"+{artifact.level}", font(21))
             draw.rounded_rectangle(
