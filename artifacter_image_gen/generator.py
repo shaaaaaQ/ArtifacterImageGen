@@ -48,8 +48,14 @@ def _grade(score: float, thresholds: Mapping[str, float]) -> str:
     return "B"
 
 
+def _format_number(value: float | int) -> str:
+    numeric_value = float(value)
+    return format(int(numeric_value), ",") if numeric_value.is_integer() else format(value, ",")
+
+
 def _format_stat_value(name: str, value: float | int) -> str:
-    return f"{float(value)}%" if name in PERCENTAGE_NAMES else format(value, ",")
+    value_text = _format_number(value)
+    return f"{value_text}%" if name in PERCENTAGE_NAMES else value_text
 
 
 def _normalize_character_art(image: Image.Image) -> Image.Image:
@@ -396,13 +402,8 @@ class Generator:
 
             draw.text(
                 (1623, 155),
-                f"""{
-                    SHORT_NAMES.get(substat_name) or substat_name
-                }  {
-                    str(substat.value)+'%'
-                    if substat_name in PERCENTAGE_NAMES
-                    else format(substat.value,',')
-                }""",
+                f"{SHORT_NAMES.get(substat_name) or substat_name}  "
+                f"{_format_stat_value(substat_name, substat.value)}",
                 font=font(23),
             )
 
@@ -499,6 +500,7 @@ class Generator:
 
             for a, stat in enumerate(substats):
                 stat_name = PROP_NAMES[_stat_type(stat)]
+                stat_value_text = _format_stat_value(stat_name, stat.value)
                 if stat_name in ["HP", "攻撃力", "防御力"]:
                     draw.text(
                         (79 + 373 * i, 811 + 50 * a),
@@ -518,29 +520,21 @@ class Generator:
                 base.paste(
                     substat_icon, (44 + 373 * i, 811 + 50 * a), mask=substat_mask
                 )
-                if stat_name in PERCENTAGE_NAMES:
-                    substat_size = draw.textlength(f"{float(stat.value)}%", font(25))
+                substat_size = draw.textlength(stat_value_text, font(25))
+                if stat_name in ["防御力", "攻撃力", "HP"]:
                     draw.text(
                         (375 + i * 373 - substat_size, 811 + 50 * a),
-                        f"{float(stat.value)}%",
+                        stat_value_text,
                         font=font(25),
+                        fill=(255, 255, 255, 190),
                     )
                 else:
-                    substat_size = draw.textlength(format(stat.value, ","), font(25))
-                    if stat_name in ["防御力", "攻撃力", "HP"]:
-                        draw.text(
-                            (375 + i * 373 - substat_size, 811 + 50 * a),
-                            format(stat.value, ","),
-                            font=font(25),
-                            fill=(255, 255, 255, 190),
-                        )
-                    else:
-                        draw.text(
-                            (375 + i * 373 - substat_size, 811 + 50 * a),
-                            format(stat.value, ","),
-                            font=font(25),
-                            fill=(255, 255, 255),
-                        )
+                    draw.text(
+                        (375 + i * 373 - substat_size, 811 + 50 * a),
+                        stat_value_text,
+                        font=font(25),
+                        fill=(255, 255, 255),
+                    )
 
                 affix_len = draw.textlength(
                     "+".join(map(str, affix.get(stat_name, ()))), font=font(11)

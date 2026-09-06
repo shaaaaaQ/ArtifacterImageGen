@@ -3,7 +3,11 @@ from types import SimpleNamespace
 
 from PIL import Image
 
-from artifacter_image_gen.generator import Generator, _normalize_character_art
+from artifacter_image_gen.generator import (
+    Generator,
+    _format_stat_value,
+    _normalize_character_art,
+)
 
 
 def typed_stat(name, value):
@@ -85,6 +89,14 @@ class GeneratorTests(unittest.TestCase):
 
         self.assertEqual(normalized.size, (2048, 1024))
         self.assertEqual(normalized.getbbox(), (384, 0, 1664, 1024))
+
+    def test_omits_zero_decimal_from_percentage(self):
+        self.assertEqual(_format_stat_value("会心率", 70.0), "70%")
+        self.assertEqual(_format_stat_value("会心率", 70.1), "70.1%")
+
+    def test_omits_zero_decimal_from_flat_stat(self):
+        self.assertEqual(_format_stat_value("HP", 4780.0), "4,780")
+        self.assertEqual(_format_stat_value("HP", 4780.5), "4,780.5")
 
 
 if __name__ == "__main__":
