@@ -12,7 +12,7 @@ license = "GPL-3.0-only"
 license-files = [
     "LICENSE",
     "COPYING.GPLv3",
-    "artifacter_image_gen/assets/GenEiLateGo-LICENSE.txt",
+    "artifacter_image_gen/assets/NotoSansJP-LICENSE.txt",
 ]
 dependencies = [
     "enka>=2.5,<3",
