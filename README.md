@@ -82,7 +82,7 @@ enka-py 本体のゲームアセットは、作業ディレクトリの`.enka_py
 
 本リポジトリのコードは、特記のない限り[MIT License](LICENSE)で提供されます。
 
-下記ライブラリはGPLv3で提供されており、結合したプログラム全体の配布にはGPL-3.0が適用されます。([COPYING.GPLv3](COPYING.GPLv3))
+下記ライブラリはGPL-3.0で提供されており、結合したプログラム全体の配布にはGPL-3.0が適用されます。([COPYING.GPLv3](COPYING.GPLv3))
 - [enka-py](https://github.com/seriaati/enka-py)
 
 使用フォント：NotoSansJP ([font.ttf](artifacter_image_gen/assets/font.ttf)) / [SIL Open Font License 1.1](artifacter_image_gen/assets/NotoSansJP-LICENSE.txt)
