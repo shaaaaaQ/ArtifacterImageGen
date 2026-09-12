@@ -44,32 +44,31 @@ asyncio.run(main())
 UIDと、プロフィールに表示しているキャラクターのindex（0始まり）を指定すると、
 実際にEnkaから取得して生成画像を既定の画像ビューアーで表示できます。
 
-```console
+```sh
 python -m artifacter_image_gen 618285856 0
 ```
 
 インストール後は次のコマンドでも同じように実行できます。
 
-```console
+```sh
 artifacter-image-gen 618285856 0
 ```
 
 表示と同時にPNGを保存する場合:
 
-```console
+```sh
 python -m artifacter_image_gen 618285856 0 --output build.png
 ```
 
 ## キャッシュ
 
-ダウンロードした画像と聖遺物のロール情報は、インストール済みパッケージ内ではなく、
-OS のユーザーキャッシュ領域へ保存します。
+ダウンロードした画像と聖遺物のロール情報は、OS のユーザーキャッシュ領域へ保存します。
 
 - Windows: `%LOCALAPPDATA%/artifacter-image-gen`
 - macOS: `~/Library/Caches/artifacter-image-gen`
 - Linux: `$XDG_CACHE_HOME/artifacter-image-gen`（未設定なら `~/.cache/...`）
 
-保存先は環境変数 `ARTIFACTER_IMAGE_GEN_CACHE_DIR`、またはコードから変更できます。
+保存先は環境変数 `ARTIFACTER_IMAGE_GEN_CACHE_DIR` から変更できます。
 
 ```python
 from artifacter_image_gen import AssetCache, Generator
@@ -77,10 +76,13 @@ from artifacter_image_gen import AssetCache, Generator
 generator = Generator(character, cache=AssetCache("/path/to/cache"))
 ```
 
-この分離により、仮想環境を作り直してもキャッシュを再利用でき、読み取り専用環境へ
-インストールした場合にも動作します。複数プロセスで共有する場合は、ユーザー単位の
-同じディレクトリを指定してください。
+enka-py 本体のゲームアセットは、作業ディレクトリの`.enka_py/assets` に保存されます
 
-なお enka.py 本体のゲームアセットは、現行の v2.5 系では作業ディレクトリの
-`.enka_py/assets` に保存されます。アプリケーション側の作業ディレクトリを固定し、
-`.enka_py` は Git 管理から外してください。
+## ライセンス
+
+本リポジトリのコードは、特記のない限り[MIT License](LICENSE)で提供されます。
+
+下記ライブラリはGPLv3で提供されており、結合したプログラム全体の配布にはGPLv3が適用されます。([COPYING.GPLv3](COPYING.GPLv3))
+- [enka-py](https://github.com/seriaati/enka-py)
+
+使用フォント：源暎ラテゴ ([font.ttf](artifacter_image_gen/assets/font.ttf)) / [SIL Open Font License 1.1](artifacter_image_gen/assets/GenEiLateGo-LICENSE.txt)
