@@ -31,6 +31,21 @@ def font(size):
     return ImageFont.truetype(ASSET_DIR / "font.ttf", size)
 
 
+def _draw_text(draw, xy, text, *args, **kwargs):
+    """Draw text with a small Noto Sans JP Bold-specific visual offset."""
+    font_obj = kwargs.get("font")
+    size = getattr(font_obj, "size", 24)
+
+    # Noto Sans JP Bold renders slightly lower/left than the previous font
+    # with the existing fixed-coordinate layout. Keep all original layout
+    # calculations and compensate only at draw time.
+    x_offset = max(1, round(size * 0.04))
+    y_offset = -max(1, round(size * 0.2))
+
+    x, y = xy
+    return draw.text((x + x_offset, y + y_offset), text, *args, **kwargs)
+
+
 def _enum_name(value) -> str:
     """Return the stable name/value exposed by enka.py enums."""
     return getattr(value, "name", None) or getattr(value, "value", value)
@@ -295,12 +310,12 @@ class Generator:
         draw = ImageDraw.Draw(base)
         character = self.character
 
-        draw.text((30, 20), character.name, font=font(48))
+        _draw_text(draw, (30, 20), character.name, font=font(48))
         level_length = draw.textlength("Lv." + str(character.level), font=font(25))
         friendship_length = draw.textlength(
             str(character.friendship_level), font=font(25)
         )
-        draw.text((35, 75), "Lv." + str(character.level), font=font(25))
+        _draw_text(draw, (35, 75), "Lv." + str(character.level), font=font(25))
         draw.rounded_rectangle(
             (35 + level_length + 5, 74, 77 + level_length + friendship_length, 102),
             radius=2,
@@ -312,7 +327,7 @@ class Generator:
         )
         friendship_icon_mask = friendship_icon.copy()
         base.paste(friendship_icon, (42 + int(level_length), 76), friendship_icon_mask)
-        draw.text(
+        _draw_text(draw, 
             (73 + level_length, 74), str(character.friendship_level), font=font(25)
         )
         return base
@@ -322,7 +337,7 @@ class Generator:
         skills = self.character.talents
 
         for i in range(3):
-            draw.text(
+            _draw_text(draw, 
                 (42, 397 + i * 105),
                 f"Lv.{skills[i].level}",
                 font=font(17),
@@ -339,7 +354,7 @@ class Generator:
                 i = STAT_ORDER.index(name)
             except ValueError:
                 i = 7
-                draw.text((844, 67 + i * 70), name, font=font(26))
+                _draw_text(draw, (844, 67 + i * 70), name, font=font(26))
                 icon = Image.open(ASSET_DIR / "emotes" / f"{name}.png")
                 icon = icon.resize((40, 40))
                 icon_paste = Image.new("RGBA", base.size, (255, 255, 255, 0))
@@ -349,7 +364,7 @@ class Generator:
 
             value_text = _format_stat_value(name, value)
             state_len = draw.textlength(value_text, font=font(26))
-            draw.text((1360 - state_len, 67 + i * 70), value_text, font=font(26))
+            _draw_text(draw, (1360 - state_len, 67 + i * 70), value_text, font=font(26))
 
             if name in ["HP", "防御力", "攻撃力"]:
                 base_value = base_stats[name]
@@ -358,13 +373,13 @@ class Generator:
                 base_value_len = draw.textlength(
                     f'{format(base_value,",")}', font=font(12)
                 )
-                draw.text(
+                _draw_text(draw, 
                     (1360 - diff_len, 97 + i * 70),
                     f'+{format(diff,",")}',
                     fill=(0, 255, 0, 180),
                     font=font(12),
                 )
-                draw.text(
+                _draw_text(draw, 
                     (1360 - diff_len - base_value_len - 1, 97 + i * 70),
                     f'{format(base_value,",")}',
                     font=font(12),
@@ -376,18 +391,18 @@ class Generator:
         draw = ImageDraw.Draw(base)
         weapon = self.weapon
         level = weapon.level
-        draw.text((1582, 47), weapon.name, font=font(26))
+        _draw_text(draw, (1582, 47), weapon.name, font=font(26))
         level_len = draw.textlength(f"Lv.{level}", font=font(24))
         draw.rounded_rectangle(
             (1582, 80, 1582 + level_len + 4, 108), radius=1, fill="black"
         )
-        draw.text((1584, 82), f"Lv.{level}", font=font(24))
+        _draw_text(draw, (1584, 82), f"Lv.{level}", font=font(24))
 
         base_atk_image = Image.open(ASSET_DIR / "emotes" / "基礎攻撃力.png")
         base_atk_image = base_atk_image.resize((23, 23))
         base_atk_mask = base_atk_image.copy()
         base.paste(base_atk_image, (1600, 120), mask=base_atk_mask)
-        draw.text(
+        _draw_text(draw, 
             (1623, 120), f"基礎攻撃力  {round(weapon.stats[0].value)}", font=font(23)
         )
 
@@ -400,7 +415,7 @@ class Generator:
             weapon_substat_mask = substat_image.copy()
             base.paste(substat_image, (1600, 155), mask=weapon_substat_mask)
 
-            draw.text(
+            _draw_text(draw, 
                 (1623, 155),
                 f"{SHORT_NAMES.get(substat_name) or substat_name}  "
                 f"{_format_stat_value(substat_name, substat.value)}",
@@ -408,16 +423,16 @@ class Generator:
             )
 
         draw.rounded_rectangle((1430, 45, 1470, 70), radius=1, fill="black")
-        draw.text((1433, 46), f"R{weapon.refinement}", font=font(24))
+        _draw_text(draw, (1433, 46), f"R{weapon.refinement}", font=font(24))
         return base
 
     def _draw_total_score(self, base, score, label, thresholds):
         draw = ImageDraw.Draw(base)
         total_score = float(format(score["Total"], ".1f"))
         score_len = draw.textlength(str(total_score), font(75))
-        draw.text((1652 - score_len // 2, 420), str(total_score), font=font(75))
+        _draw_text(draw, (1652 - score_len // 2, 420), str(total_score), font=font(75))
         text_len = draw.textlength(label, font=font(24))
-        draw.text((1867 - text_len, 585), label, font=font(24))
+        _draw_text(draw, (1867 - text_len, 585), label, font=font(24))
 
         grade = Image.open(ASSET_DIR / "grade" / f"{_grade(total_score, thresholds)}.png")
 
@@ -460,7 +475,7 @@ class Generator:
                 SHORT_NAMES.get(mainstat_name) or mainstat_name,
                 font=font(29),
             )
-            draw.text(
+            _draw_text(draw, 
                 (375 + i * 373 - int(mainstat_len), 655),
                 SHORT_NAMES.get(mainstat_name) or mainstat_name,
                 font=font(29),
@@ -479,7 +494,7 @@ class Generator:
 
             mainstat_text = _format_stat_value(mainstat_name, mainstat.value)
             mainstat_value_size = draw.textlength(mainstat_text, font(49))
-            draw.text(
+            _draw_text(draw, 
                 (375 + i * 373 - mainstat_value_size, 690),
                 mainstat_text,
                 font=font(49),
@@ -491,7 +506,7 @@ class Generator:
                 fill="black",
                 radius=2,
             )
-            draw.text(
+            _draw_text(draw, 
                 (374 + i * 373 - level_len, 749), f"+{artifact.level}", font=font(21)
             )
 
@@ -502,14 +517,14 @@ class Generator:
                 stat_name = PROP_NAMES[_stat_type(stat)]
                 stat_value_text = _format_stat_value(stat_name, stat.value)
                 if stat_name in ["HP", "攻撃力", "防御力"]:
-                    draw.text(
+                    _draw_text(draw, 
                         (79 + 373 * i, 811 + 50 * a),
                         SHORT_NAMES.get(stat_name) or stat_name,
                         font=font(25),
                         fill=(255, 255, 255, 190),
                     )
                 else:
-                    draw.text(
+                    _draw_text(draw, 
                         (79 + 373 * i, 811 + 50 * a),
                         SHORT_NAMES.get(stat_name) or stat_name,
                         font=font(25),
@@ -522,14 +537,14 @@ class Generator:
                 )
                 substat_size = draw.textlength(stat_value_text, font(25))
                 if stat_name in ["防御力", "攻撃力", "HP"]:
-                    draw.text(
+                    _draw_text(draw, 
                         (375 + i * 373 - substat_size, 811 + 50 * a),
                         stat_value_text,
                         font=font(25),
                         fill=(255, 255, 255, 190),
                     )
                 else:
-                    draw.text(
+                    _draw_text(draw, 
                         (375 + i * 373 - substat_size, 811 + 50 * a),
                         stat_value_text,
                         font=font(25),
@@ -539,7 +554,7 @@ class Generator:
                 affix_len = draw.textlength(
                     "+".join(map(str, affix.get(stat_name, ()))), font=font(11)
                 )
-                draw.text(
+                _draw_text(draw, 
                     (375 + i * 373 - affix_len, 840 + 50 * a),
                     "+".join(map(str, affix.get(stat_name, ()))),
                     fill=(255, 255, 255, 160),
@@ -548,10 +563,10 @@ class Generator:
 
             artifact_score = float(format(score[parts], ".1f"))
             score_len = draw.textlength(str(artifact_score), font(36))
-            draw.text(
+            _draw_text(draw, 
                 (380 + i * 373 - score_len, 1016), str(artifact_score), font=font(36)
             )
-            draw.text(
+            _draw_text(draw, 
                 (295 + i * 373 - score_len, 1025),
                 "Score",
                 font=font(27),
@@ -573,13 +588,13 @@ class Generator:
         }
         for i, (n, q) in enumerate(set_bonus.items()):
             if len(set_bonus) == 2:
-                draw.text((1536, 243 + i * 35), n, fill=(0, 255, 0), font=font(23))
+                _draw_text(draw, (1536, 243 + i * 35), n, fill=(0, 255, 0), font=font(23))
                 draw.rounded_rectangle(
                     (1818, 243 + i * 35, 1862, 266 + i * 35), 1, "black"
                 )
-                draw.text((1835, 243 + i * 35), str(q), font=font(19))
+                _draw_text(draw, (1835, 243 + i * 35), str(q), font=font(19))
             if len(set_bonus) == 1:
-                draw.text((1536, 263), n, fill=(0, 255, 0), font=font(23))
+                _draw_text(draw, (1536, 263), n, fill=(0, 255, 0), font=font(23))
                 draw.rounded_rectangle((1818, 263, 1862, 288), 1, "black")
-                draw.text((1831, 265), str(q), font=font(19))
+                _draw_text(draw, (1831, 265), str(q), font=font(19))
         return base
