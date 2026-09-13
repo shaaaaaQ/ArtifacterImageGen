@@ -86,3 +86,12 @@ enka-py 本体のゲームアセットは、作業ディレクトリの`.enka_py
 - [enka-py](https://github.com/seriaati/enka-py)
 
 使用フォント：NotoSansJP ([font.ttf](artifacter_image_gen/assets/font.ttf)) / [SIL Open Font License 1.1](artifacter_image_gen/assets/NotoSansJP-LICENSE.txt)
+
+## 免責事項
+
+本プロジェクトは非公式のファンプロジェクトです。HoYoverseおよびCOGNOSPHEREとの提携、承認、後援その他の関係はありません。
+
+「原神」および関連する名称、画像、その他の素材に関する権利は、それぞれの権利者に帰属します。
+
+本リポジトリに含まれる第三者に帰属する名称、画像、その他の素材には、本リポジトリのソフトウェアライセンスは適用されません。
+
